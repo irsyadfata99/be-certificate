@@ -3,7 +3,15 @@ const pool = require("../config/database");
 // Create new certificate entry
 const createCertificate = async (req, res) => {
   try {
-    const { certificate_id, jumlah_kbp, jumlah_snd, jumlah_mkw } = req.body;
+    const {
+      certificate_id,
+      jumlah_sertifikat_kbp,
+      jumlah_medali_kbp,
+      jumlah_sertifikat_snd,
+      jumlah_medali_snd,
+      jumlah_sertifikat_mkw,
+      jumlah_medali_mkw,
+    } = req.body;
 
     // Validasi input
     if (!certificate_id) {
@@ -26,19 +34,32 @@ const createCertificate = async (req, res) => {
       });
     }
 
-    // Untuk setiap branch, jumlah certificate = medali awal
-    const kbp = jumlah_kbp || 0;
-    const snd = jumlah_snd || 0;
-    const mkw = jumlah_mkw || 0;
+    // Set defaults for each branch
+    const sert_kbp = jumlah_sertifikat_kbp || 0;
+    const medal_kbp = jumlah_medali_kbp || 0;
+    const sert_snd = jumlah_sertifikat_snd || 0;
+    const medal_snd = jumlah_medali_snd || 0;
+    const sert_mkw = jumlah_sertifikat_mkw || 0;
+    const medal_mkw = jumlah_medali_mkw || 0;
 
-    // Insert new certificate
+    // Insert new certificate with separate medal and certificate counts
     const result = await pool.query(
       `INSERT INTO certificates 
-       (certificate_id, jumlah_kbp, medali_awal_kbp, jumlah_snd, medali_awal_snd, 
-        jumlah_mkw, medali_awal_mkw) 
-       VALUES ($1, $2, $2, $3, $3, $4, $4) 
+       (certificate_id, 
+        jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp,
+        jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd,
+        jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw) 
+       VALUES ($1, $2, $3, $3, $4, $5, $5, $6, $7, $7) 
        RETURNING *`,
-      [certificate_id, kbp, snd, mkw],
+      [
+        certificate_id,
+        sert_kbp,
+        medal_kbp,
+        sert_snd,
+        medal_snd,
+        sert_mkw,
+        medal_mkw,
+      ],
     );
 
     res.status(201).json({
@@ -113,7 +134,14 @@ const getCertificateById = async (req, res) => {
 const updateCertificate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { jumlah_kbp, jumlah_snd, jumlah_mkw } = req.body;
+    const {
+      jumlah_sertifikat_kbp,
+      jumlah_medali_kbp,
+      jumlah_sertifikat_snd,
+      jumlah_medali_snd,
+      jumlah_sertifikat_mkw,
+      jumlah_medali_mkw,
+    } = req.body;
 
     // Check if certificate exists
     const checkExisting = await pool.query(
@@ -130,21 +158,42 @@ const updateCertificate = async (req, res) => {
 
     const current = checkExisting.rows[0];
 
-    // Untuk setiap branch, jumlah certificate = medali awal
-    const kbp = jumlah_kbp !== undefined ? jumlah_kbp : current.jumlah_kbp;
-    const snd = jumlah_snd !== undefined ? jumlah_snd : current.jumlah_snd;
-    const mkw = jumlah_mkw !== undefined ? jumlah_mkw : current.jumlah_mkw;
+    // Use current values if not provided
+    const sert_kbp =
+      jumlah_sertifikat_kbp !== undefined
+        ? jumlah_sertifikat_kbp
+        : current.jumlah_sertifikat_kbp;
+    const medal_kbp =
+      jumlah_medali_kbp !== undefined
+        ? jumlah_medali_kbp
+        : current.jumlah_medali_kbp;
+    const sert_snd =
+      jumlah_sertifikat_snd !== undefined
+        ? jumlah_sertifikat_snd
+        : current.jumlah_sertifikat_snd;
+    const medal_snd =
+      jumlah_medali_snd !== undefined
+        ? jumlah_medali_snd
+        : current.jumlah_medali_snd;
+    const sert_mkw =
+      jumlah_sertifikat_mkw !== undefined
+        ? jumlah_sertifikat_mkw
+        : current.jumlah_sertifikat_mkw;
+    const medal_mkw =
+      jumlah_medali_mkw !== undefined
+        ? jumlah_medali_mkw
+        : current.jumlah_medali_mkw;
 
     // Update certificate
     const result = await pool.query(
       `UPDATE certificates 
-       SET jumlah_kbp = $1, medali_awal_kbp = $1,
-           jumlah_snd = $2, medali_awal_snd = $2,
-           jumlah_mkw = $3, medali_awal_mkw = $3,
+       SET jumlah_sertifikat_kbp = $1, jumlah_medali_kbp = $2, medali_awal_kbp = $2,
+           jumlah_sertifikat_snd = $3, jumlah_medali_snd = $4, medali_awal_snd = $4,
+           jumlah_sertifikat_mkw = $5, jumlah_medali_mkw = $6, medali_awal_mkw = $6,
            updated_at = CURRENT_TIMESTAMP
-       WHERE certificate_id = $4
+       WHERE certificate_id = $7
        RETURNING *`,
-      [kbp, snd, mkw, id],
+      [sert_kbp, medal_kbp, sert_snd, medal_snd, sert_mkw, medal_mkw, id],
     );
 
     res.json({
@@ -199,16 +248,17 @@ const deleteCertificate = async (req, res) => {
   }
 };
 
-// Migrate stock from SND to other branches
+// Migrate stock from SND to other branches (certificates or medals)
 const migrateCertificate = async (req, res) => {
   try {
-    const { certificate_id, destination_branch, amount } = req.body;
+    const { certificate_id, destination_branch, amount, type } = req.body;
 
     // Validasi input
-    if (!certificate_id || !destination_branch || !amount) {
+    if (!certificate_id || !destination_branch || !amount || !type) {
       return res.status(400).json({
         success: false,
-        message: "Certificate ID, destination branch, and amount are required",
+        message:
+          "Certificate ID, destination branch, amount, and type are required",
       });
     }
 
@@ -217,6 +267,14 @@ const migrateCertificate = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid destination branch. Must be 'mkw' or 'kbp'",
+      });
+    }
+
+    // Validasi type
+    if (type !== "certificate" && type !== "medal") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid type. Must be 'certificate' or 'medal'",
       });
     }
 
@@ -244,63 +302,75 @@ const migrateCertificate = async (req, res) => {
 
     const certificate = certResult.rows[0];
 
+    // Determine source field based on type
+    let sourceField, destField, sourceAmount, destAmount;
+
+    if (type === "certificate") {
+      sourceField = "jumlah_sertifikat_snd";
+      sourceAmount = certificate.jumlah_sertifikat_snd;
+
+      if (destination_branch === "mkw") {
+        destField = "jumlah_sertifikat_mkw";
+        destAmount = certificate.jumlah_sertifikat_mkw;
+      } else {
+        destField = "jumlah_sertifikat_kbp";
+        destAmount = certificate.jumlah_sertifikat_kbp;
+      }
+    } else {
+      // medal
+      sourceField = "jumlah_medali_snd";
+      sourceAmount = certificate.jumlah_medali_snd;
+
+      if (destination_branch === "mkw") {
+        destField = "jumlah_medali_mkw";
+        destAmount = certificate.jumlah_medali_mkw;
+      } else {
+        destField = "jumlah_medali_kbp";
+        destAmount = certificate.jumlah_medali_kbp;
+      }
+    }
+
     // Check if SND has enough stock
-    if (certificate.jumlah_snd < transferAmount) {
+    if (sourceAmount < transferAmount) {
       return res.status(400).json({
         success: false,
-        message: `Insufficient SND stock. Available: ${certificate.jumlah_snd}, Requested: ${transferAmount}`,
+        message: `Insufficient SND ${type} stock. Available: ${sourceAmount}, Requested: ${transferAmount}`,
       });
     }
 
     // Calculate new amounts
-    const newSndAmount = certificate.jumlah_snd - transferAmount;
-    let newDestAmount;
-    let updateQuery;
+    const newSourceAmount = sourceAmount - transferAmount;
+    const newDestAmount = destAmount + transferAmount;
 
-    if (destination_branch === "mkw") {
-      newDestAmount = certificate.jumlah_mkw + transferAmount;
-      updateQuery = `
-        UPDATE certificates 
-        SET jumlah_snd = $1, 
-            jumlah_mkw = $2,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE certificate_id = $3
-        RETURNING *
-      `;
-    } else {
-      // kbp
-      newDestAmount = certificate.jumlah_kbp + transferAmount;
-      updateQuery = `
-        UPDATE certificates 
-        SET jumlah_snd = $1, 
-            jumlah_kbp = $2,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE certificate_id = $3
-        RETURNING *
-      `;
-    }
+    // Build dynamic update query
+    const updateQuery = `
+      UPDATE certificates 
+      SET ${sourceField} = $1, 
+          ${destField} = $2,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE certificate_id = $3
+      RETURNING *
+    `;
 
     // Execute migration
     const result = await pool.query(updateQuery, [
-      newSndAmount,
+      newSourceAmount,
       newDestAmount,
       certificate_id,
     ]);
 
     res.json({
       success: true,
-      message: `Successfully migrated ${transferAmount} certificates from SND to ${destination_branch.toUpperCase()}`,
+      message: `Successfully migrated ${transferAmount} ${type}s from SND to ${destination_branch.toUpperCase()}`,
       data: result.rows[0],
       migration: {
+        type: type,
         from: "snd",
         to: destination_branch,
         amount: transferAmount,
-        previous_snd: certificate.jumlah_snd,
-        new_snd: newSndAmount,
-        previous_dest:
-          destination_branch === "mkw"
-            ? certificate.jumlah_mkw
-            : certificate.jumlah_kbp,
+        previous_snd: sourceAmount,
+        new_snd: newSourceAmount,
+        previous_dest: destAmount,
         new_dest: newDestAmount,
       },
     });
