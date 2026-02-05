@@ -1,8 +1,12 @@
-// Certificate Logs Controller
+// Certificate Logs Controller - FIXED VERSION
 
 const pool = require("../config/database");
+const fs = require("fs");
+const path = require("path");
 
-// Helper function to log actions
+// =====================================================
+// FIX #5: IMPROVED LOG ACTION WITH BACKUP MECHANISM
+// =====================================================
 async function logAction(data) {
   const { certificate_id, action_type, description, from_branch = null, to_branch = null, certificate_amount = 0, medal_amount = 0, old_values = null, new_values = null, performed_by = "System" } = data;
 
@@ -16,12 +20,55 @@ async function logAction(data) {
     );
     console.log("📝 Log created:", action_type, certificate_id);
   } catch (error) {
-    console.error("❌ Failed to create log:", error);
+    console.error("❌ CRITICAL: Failed to create log:", error);
+
+    // FIX #5: Create backup log file when database logging fails
+    try {
+      const logDir = path.join(__dirname, "..", "logs");
+      const logFile = path.join(logDir, "failed-logs.jsonl");
+
+      // Create logs directory if it doesn't exist
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
+
+      const failedLog = {
+        timestamp: new Date().toISOString(),
+        error: error.message,
+        errorStack: error.stack,
+        logData: {
+          certificate_id,
+          action_type,
+          description,
+          from_branch,
+          to_branch,
+          certificate_amount,
+          medal_amount,
+          old_values,
+          new_values,
+          performed_by,
+        },
+      };
+
+      // Append to JSONL file (each line is a valid JSON object)
+      fs.appendFileSync(logFile, JSON.stringify(failedLog) + "\n");
+
+      console.log(`💾 Failed log saved to backup file: ${logFile}`);
+      console.log("⚠️  WARNING: Audit log failed to write to database! Check failed-logs.jsonl");
+    } catch (fileError) {
+      console.error("❌ DOUBLE FAILURE: Could not save to backup file either:", fileError);
+      // At this point, we've done everything we can
+      // Consider sending an alert notification here (email, Slack, etc.)
+    }
+
     // Don't throw error - logging shouldn't break the main operation
+    // But we've at least tried to preserve the log data
   }
 }
 
-// Get all logs with optional filtering
+// =====================================================
+// FIX #7: GET LOGS WITH IMPROVED DATE FILTER
+// =====================================================
 const getLogs = async (req, res) => {
   try {
     const { certificate_id, action_type, from_date, to_date, search, limit = 100, offset = 0 } = req.query;
@@ -57,8 +104,9 @@ const getLogs = async (req, res) => {
       paramCount++;
     }
 
+    // FIX #7: Simplified date filter - use < next day instead of <= end of day
     if (to_date && to_date.trim()) {
-      query += ` AND created_at <= $${paramCount}::date + interval '1 day' - interval '1 second'`;
+      query += ` AND created_at < $${paramCount}::date + interval '1 day'`;
       params.push(to_date.trim());
       paramCount++;
     }
@@ -106,7 +154,7 @@ const getLogs = async (req, res) => {
     }
 
     if (to_date && to_date.trim()) {
-      countQuery += ` AND created_at <= $${countParamNum}::date + interval '1 day' - interval '1 second'`;
+      countQuery += ` AND created_at < $${countParamNum}::date + interval '1 day'`;
       countParams.push(to_date.trim());
       countParamNum++;
     }
@@ -128,6 +176,8 @@ const getLogs = async (req, res) => {
         limit: validatedLimit,
         offset: validatedOffset,
         hasMore: totalCount > validatedOffset + result.rows.length,
+        currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
+        totalPages: Math.ceil(totalCount / validatedLimit),
       },
     });
   } catch (error) {
@@ -199,9 +249,85 @@ const deleteOldLogs = async (req, res) => {
   }
 };
 
+// =====================================================
+// NEW: Utility function to recover failed logs from backup file
+// =====================================================
+const recoverFailedLogs = async (req, res) => {
+  try {
+    const logFile = path.join(__dirname, "..", "logs", "failed-logs.jsonl");
+
+    if (!fs.existsSync(logFile)) {
+      return res.json({
+        success: true,
+        message: "No failed logs to recover",
+        recovered: 0,
+      });
+    }
+
+    const fileContent = fs.readFileSync(logFile, "utf-8");
+    const lines = fileContent.split("\n").filter((line) => line.trim());
+
+    let recovered = 0;
+    let failed = 0;
+
+    for (const line of lines) {
+      try {
+        const failedLog = JSON.parse(line);
+        const logData = failedLog.logData;
+
+        await pool.query(
+          `INSERT INTO certificate_logs 
+           (certificate_id, action_type, description, from_branch, to_branch, 
+            certificate_amount, medal_amount, old_values, new_values, performed_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            logData.certificate_id,
+            logData.action_type,
+            logData.description,
+            logData.from_branch,
+            logData.to_branch,
+            logData.certificate_amount,
+            logData.medal_amount,
+            logData.old_values ? JSON.stringify(logData.old_values) : null,
+            logData.new_values ? JSON.stringify(logData.new_values) : null,
+            logData.performed_by,
+          ],
+        );
+
+        recovered++;
+      } catch (err) {
+        console.error("Failed to recover log:", err);
+        failed++;
+      }
+    }
+
+    // Rename the file to mark it as processed
+    if (recovered > 0) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const backupFile = path.join(__dirname, "..", "logs", `recovered-${timestamp}.jsonl`);
+      fs.renameSync(logFile, backupFile);
+    }
+
+    res.json({
+      success: true,
+      message: `Recovery complete. Recovered: ${recovered}, Failed: ${failed}`,
+      recovered,
+      failed,
+    });
+  } catch (error) {
+    console.error("Recover failed logs error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   logAction,
   getLogs,
   getLogsByCertificate,
   deleteOldLogs,
+  recoverFailedLogs, // NEW
 };

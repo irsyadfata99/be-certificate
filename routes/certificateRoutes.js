@@ -6,9 +6,10 @@ const {
   getCertificateById,
   updateCertificate,
   deleteCertificate,
+  clearAllCertificates, // NEW
   migrateCertificate,
-  getStockSummary, // NEW
-  getTransactionHistory, // NEW
+  getStockSummary,
+  getTransactionHistory,
 } = require("../controllers/CertificateController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
@@ -40,6 +41,9 @@ router.put("/:id", verifyToken, updateCertificate);
 
 // Delete certificate (DISABLED - will return 403 error)
 router.delete("/:id", verifyToken, deleteCertificate);
+
+// NEW: Clear all certificates (bulk delete)
+router.post("/clear-all", verifyToken, clearAllCertificates);
 
 // Migrate stock from SND to other branches
 router.post("/migrate", verifyToken, migrateCertificate);

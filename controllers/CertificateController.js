@@ -22,6 +22,34 @@ function validatePositiveInteger(value, fieldName, maxValue = 2147483647) {
 }
 
 // =====================================================
+// FIX #3: CERTIFICATE_ID VALIDATION
+// =====================================================
+function validateCertificateId(certificate_id) {
+  if (!certificate_id || !certificate_id.trim()) {
+    return { valid: false, error: "Certificate ID is required" };
+  }
+
+  const cleanId = certificate_id.trim();
+
+  // Length validation
+  if (cleanId.length < 3) {
+    return { valid: false, error: "Certificate ID must be at least 3 characters" };
+  }
+
+  if (cleanId.length > 50) {
+    return { valid: false, error: "Certificate ID must not exceed 50 characters" };
+  }
+
+  // Format validation (alphanumeric + dash/underscore only)
+  const validFormat = /^[A-Za-z0-9_-]+$/;
+  if (!validFormat.test(cleanId)) {
+    return { valid: false, error: "Certificate ID can only contain letters, numbers, dashes, and underscores" };
+  }
+
+  return { valid: true, value: cleanId };
+}
+
+// =====================================================
 // 1. CREATE NEW CERTIFICATE (INPUT BATCH)
 // =====================================================
 const createCertificate = async (req, res) => {
@@ -30,16 +58,19 @@ const createCertificate = async (req, res) => {
 
     const { certificate_id, jumlah_sertifikat_kbp, jumlah_medali_kbp, jumlah_sertifikat_snd, jumlah_medali_snd, jumlah_sertifikat_mkw, jumlah_medali_mkw } = req.body;
 
-    // Validasi input
-    if (!certificate_id || !certificate_id.trim()) {
+    // FIX #3: Validate certificate_id format
+    const idValidation = validateCertificateId(certificate_id);
+    if (!idValidation.valid) {
       return res.status(400).json({
         success: false,
-        message: "Certificate ID is required",
+        message: idValidation.error,
       });
     }
 
+    const cleanId = idValidation.value;
+
     // Check if certificate_id already exists
-    const checkExisting = await pool.query("SELECT * FROM certificates WHERE certificate_id = $1", [certificate_id.trim()]);
+    const checkExisting = await pool.query("SELECT * FROM certificates WHERE certificate_id = $1", [cleanId]);
 
     if (checkExisting.rows.length > 0) {
       return res.status(409).json({
@@ -88,7 +119,7 @@ const createCertificate = async (req, res) => {
     }
 
     console.log("📊 Processed values:", {
-      certificate_id: certificate_id.trim(),
+      certificate_id: cleanId,
       sert_kbp,
       medal_kbp,
       sert_snd,
@@ -107,14 +138,14 @@ const createCertificate = async (req, res) => {
         jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw) 
        VALUES ($1, $2, $3, $3, $4, $5, $5, $6, $7, $7) 
        RETURNING *`,
-      [certificate_id.trim(), sert_kbp, medal_kbp, sert_snd, medal_snd, sert_mkw, medal_mkw],
+      [cleanId, sert_kbp, medal_kbp, sert_snd, medal_snd, sert_mkw, medal_mkw],
     );
 
     console.log("✅ Certificate created:", result.rows[0]);
 
     // Log the action
     await logAction({
-      certificate_id: certificate_id.trim(),
+      certificate_id: cleanId,
       action_type: "CREATE",
       description: `Created new certificate batch: SND: ${sert_snd} certs, ${medal_snd} medals | MKW: ${sert_mkw} certs, ${medal_mkw} medals | KBP: ${sert_kbp} certs, ${medal_kbp} medals`,
       new_values: result.rows[0],
@@ -137,15 +168,34 @@ const createCertificate = async (req, res) => {
 };
 
 // =====================================================
-// 2. GET ALL CERTIFICATES
+// FIX #2: GET ALL CERTIFICATES WITH PAGINATION
 // =====================================================
 const getAllCertificates = async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM certificates ORDER BY created_at DESC");
+    const { limit = 50, offset = 0 } = req.query;
+
+    // Validate and sanitize pagination params
+    const validatedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 1000);
+    const validatedOffset = Math.max(parseInt(offset) || 0, 0);
+
+    // Get paginated results
+    const result = await pool.query("SELECT * FROM certificates ORDER BY created_at DESC LIMIT $1 OFFSET $2", [validatedLimit, validatedOffset]);
+
+    // Get total count
+    const countResult = await pool.query("SELECT COUNT(*) FROM certificates");
+    const totalCount = parseInt(countResult.rows[0].count);
 
     res.json({
       success: true,
       data: result.rows,
+      pagination: {
+        total: totalCount,
+        limit: validatedLimit,
+        offset: validatedOffset,
+        hasMore: totalCount > validatedOffset + result.rows.length,
+        currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
+        totalPages: Math.ceil(totalCount / validatedLimit),
+      },
       count: result.rows.length,
     });
   } catch (error) {
@@ -165,14 +215,18 @@ const getCertificateById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id || !id.trim()) {
+    // FIX #3: Validate certificate_id format
+    const idValidation = validateCertificateId(id);
+    if (!idValidation.valid) {
       return res.status(400).json({
         success: false,
-        message: "Certificate ID is required",
+        message: idValidation.error,
       });
     }
 
-    const result = await pool.query("SELECT * FROM certificates WHERE certificate_id = $1", [id.trim()]);
+    const cleanId = idValidation.value;
+
+    const result = await pool.query("SELECT * FROM certificates WHERE certificate_id = $1", [cleanId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -238,7 +292,104 @@ const deleteCertificate = async (req, res) => {
 };
 
 // =====================================================
-// 6. MIGRATE STOCK FROM SND TO OTHER BRANCHES
+// NEW: CLEAR ALL CERTIFICATES (BULK DELETE)
+// =====================================================
+const clearAllCertificates = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    console.log("🗑️ Clear all certificates requested");
+
+    // Get all certificates before deletion (for logging)
+    const allCertsResult = await client.query("SELECT * FROM certificates");
+    const allCertificates = allCertsResult.rows;
+
+    if (allCertificates.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "No certificates to delete",
+      });
+    }
+
+    console.log(`📊 Found ${allCertificates.length} certificates to delete`);
+
+    // Calculate total stock being deleted
+    let totalCert = 0;
+    let totalMedal = 0;
+
+    allCertificates.forEach((cert) => {
+      totalCert += (cert.jumlah_sertifikat_snd || 0) + (cert.jumlah_sertifikat_mkw || 0) + (cert.jumlah_sertifikat_kbp || 0);
+      totalMedal += (cert.jumlah_medali_snd || 0) + (cert.jumlah_medali_mkw || 0) + (cert.jumlah_medali_kbp || 0);
+    });
+
+    // Delete all certificates
+    const deleteResult = await client.query("DELETE FROM certificates RETURNING *");
+
+    console.log(`✅ Deleted ${deleteResult.rows.length} certificates`);
+
+    // Create comprehensive log entry
+    try {
+      await client.query(
+        `INSERT INTO certificate_logs 
+         (certificate_id, action_type, description, certificate_amount, medal_amount, 
+          old_values, performed_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          "BULK_DELETE",
+          "DELETE_ALL",
+          `Cleared all ${allCertificates.length} certificate batches. Total: ${totalCert} certificates, ${totalMedal} medals deleted`,
+          totalCert,
+          totalMedal,
+          JSON.stringify({
+            batches_deleted: allCertificates.length,
+            total_certificates: totalCert,
+            total_medals: totalMedal,
+            deleted_at: new Date().toISOString(),
+          }),
+          req.user?.username || "System",
+        ],
+      );
+      console.log("📝 Bulk delete log created successfully");
+    } catch (logError) {
+      console.error("❌ CRITICAL: Log creation failed, rolling back entire transaction:", logError);
+      await client.query("ROLLBACK");
+      return res.status(500).json({
+        success: false,
+        message: "Clear all failed: Unable to create audit log. Transaction rolled back.",
+        error: logError.message,
+      });
+    }
+
+    // Commit transaction
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: `Successfully deleted all ${allCertificates.length} certificate batches`,
+      data: {
+        deleted_count: allCertificates.length,
+        total_certificates_deleted: totalCert,
+        total_medals_deleted: totalMedal,
+      },
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("💥 Clear all certificates error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while clearing certificates",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
+// =====================================================
+// FIX #4: MIGRATE STOCK WITH PROPER TRANSACTION LOGGING
 // =====================================================
 const migrateCertificate = async (req, res) => {
   // Start transaction
@@ -251,16 +402,27 @@ const migrateCertificate = async (req, res) => {
 
     const { certificate_id, destination_branch, certificate_amount, medal_amount } = req.body;
 
-    // Validasi input
-    if (!certificate_id || !certificate_id.trim() || !destination_branch || !destination_branch.trim()) {
+    // FIX #3: Validate certificate_id format
+    const idValidation = validateCertificateId(certificate_id);
+    if (!idValidation.valid) {
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
-        message: "Certificate ID and destination branch are required",
+        message: idValidation.error,
       });
     }
 
+    const cleanId = idValidation.value;
+
     // Validasi destination branch
+    if (!destination_branch || !destination_branch.trim()) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "Destination branch is required",
+      });
+    }
+
     const destBranch = destination_branch.trim().toLowerCase();
     if (destBranch !== "mkw" && destBranch !== "kbp") {
       await client.query("ROLLBACK");
@@ -302,7 +464,7 @@ const migrateCertificate = async (req, res) => {
     }
 
     // Get current certificate data WITH ROW LOCK to prevent race condition
-    const certResult = await client.query("SELECT * FROM certificates WHERE certificate_id = $1 FOR UPDATE", [certificate_id.trim()]);
+    const certResult = await client.query("SELECT * FROM certificates WHERE certificate_id = $1 FOR UPDATE", [cleanId]);
 
     if (certResult.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -320,7 +482,7 @@ const migrateCertificate = async (req, res) => {
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
-        message: `Insufficient SND certificate stock in this batch. Available in ${certificate_id}: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
+        message: `Insufficient SND certificate stock in this batch. Available in ${cleanId}: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
       });
     }
 
@@ -328,7 +490,7 @@ const migrateCertificate = async (req, res) => {
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
-        message: `Insufficient SND medal stock in this batch. Available in ${certificate_id}: ${certificate.jumlah_medali_snd}, Requested: ${medalAmount}`,
+        message: `Insufficient SND medal stock in this batch. Available in ${cleanId}: ${certificate.jumlah_medali_snd}, Requested: ${medalAmount}`,
       });
     }
 
@@ -370,10 +532,10 @@ const migrateCertificate = async (req, res) => {
       RETURNING *
     `;
 
-    console.log("📝 Update query params:", [newSndCert, newSndMedal, newDestCert, newDestMedal, certificate_id.trim()]);
+    console.log("📝 Update query params:", [newSndCert, newSndMedal, newDestCert, newDestMedal, cleanId]);
 
     // Execute migration within transaction
-    const result = await client.query(updateQuery, [newSndCert, newSndMedal, newDestCert, newDestMedal, certificate_id.trim()]);
+    const result = await client.query(updateQuery, [newSndCert, newSndMedal, newDestCert, newDestMedal, cleanId]);
 
     console.log("✅ Migration successful:", result.rows[0]);
 
@@ -382,31 +544,48 @@ const migrateCertificate = async (req, res) => {
     if (certAmount > 0) migrationItems.push(`${certAmount} certificate(s)`);
     if (medalAmount > 0) migrationItems.push(`${medalAmount} medal(s)`);
 
-    // Log action
-    await logAction({
-      certificate_id: certificate_id.trim(),
-      action_type: "MIGRATE",
-      description: `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()} (Batch: ${certificate_id.trim()})`,
-      from_branch: "snd",
-      to_branch: destBranch,
-      certificate_amount: certAmount,
-      medal_amount: medalAmount,
-      old_values: {
-        snd_certs: certificate.jumlah_sertifikat_snd,
-        snd_medals: certificate.jumlah_medali_snd,
-        dest_certs: destBranch === "mkw" ? certificate.jumlah_sertifikat_mkw : certificate.jumlah_sertifikat_kbp,
-        dest_medals: destBranch === "mkw" ? certificate.jumlah_medali_mkw : certificate.jumlah_medali_kbp,
-      },
-      new_values: {
-        snd_certs: newSndCert,
-        snd_medals: newSndMedal,
-        dest_certs: newDestCert,
-        dest_medals: newDestMedal,
-      },
-      performed_by: req.user?.username || "System",
-    });
+    // FIX #4: Log action INSIDE transaction
+    try {
+      await client.query(
+        `INSERT INTO certificate_logs 
+         (certificate_id, action_type, description, from_branch, to_branch, 
+          certificate_amount, medal_amount, old_values, new_values, performed_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          cleanId,
+          "MIGRATE",
+          `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()} (Batch: ${cleanId})`,
+          "snd",
+          destBranch,
+          certAmount,
+          medalAmount,
+          JSON.stringify({
+            snd_certs: certificate.jumlah_sertifikat_snd,
+            snd_medals: certificate.jumlah_medali_snd,
+            dest_certs: destBranch === "mkw" ? certificate.jumlah_sertifikat_mkw : certificate.jumlah_sertifikat_kbp,
+            dest_medals: destBranch === "mkw" ? certificate.jumlah_medali_mkw : certificate.jumlah_medali_kbp,
+          }),
+          JSON.stringify({
+            snd_certs: newSndCert,
+            snd_medals: newSndMedal,
+            dest_certs: newDestCert,
+            dest_medals: newDestMedal,
+          }),
+          req.user?.username || "System",
+        ],
+      );
+      console.log("📝 Log created successfully inside transaction");
+    } catch (logError) {
+      console.error("❌ CRITICAL: Log creation failed, rolling back entire transaction:", logError);
+      await client.query("ROLLBACK");
+      return res.status(500).json({
+        success: false,
+        message: "Migration failed: Unable to create audit log. Transaction rolled back.",
+        error: logError.message,
+      });
+    }
 
-    // Commit transaction
+    // Commit transaction ONLY if everything succeeded
     await client.query("COMMIT");
 
     res.json({
@@ -414,7 +593,7 @@ const migrateCertificate = async (req, res) => {
       message: `Successfully migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
       data: result.rows[0],
       migration: {
-        certificate_id: certificate_id.trim(),
+        certificate_id: cleanId,
         from: "snd",
         to: destBranch,
         certificates: {
@@ -447,25 +626,25 @@ const migrateCertificate = async (req, res) => {
 };
 
 // =====================================================
-// 7. GET STOCK SUMMARY (NEW FEATURE)
+// FIX #6: GET STOCK SUMMARY WITH NULL HANDLING
 // =====================================================
 const getStockSummary = async (req, res) => {
   try {
     console.log("📊 Fetching stock summary...");
 
-    // Calculate total stock across all batches
+    // FIX #6: Use COALESCE to handle empty table
     const summaryQuery = await pool.query(`
       SELECT 
-        SUM(jumlah_sertifikat_snd) as snd_cert,
-        SUM(jumlah_medali_snd) as snd_medal,
-        SUM(jumlah_sertifikat_mkw) as mkw_cert,
-        SUM(jumlah_medali_mkw) as mkw_medal,
-        SUM(jumlah_sertifikat_kbp) as kbp_cert,
-        SUM(jumlah_medali_kbp) as kbp_medal
+        COALESCE(SUM(jumlah_sertifikat_snd), 0) as snd_cert,
+        COALESCE(SUM(jumlah_medali_snd), 0) as snd_medal,
+        COALESCE(SUM(jumlah_sertifikat_mkw), 0) as mkw_cert,
+        COALESCE(SUM(jumlah_medali_mkw), 0) as mkw_medal,
+        COALESCE(SUM(jumlah_sertifikat_kbp), 0) as kbp_cert,
+        COALESCE(SUM(jumlah_medali_kbp), 0) as kbp_medal
       FROM certificates
     `);
 
-    const summary = summaryQuery.rows[0];
+    const summary = summaryQuery.rows[0] || {};
 
     const response = {
       success: true,
@@ -506,7 +685,7 @@ const getStockSummary = async (req, res) => {
 };
 
 // =====================================================
-// 8. GET TRANSACTION HISTORY (NEW FEATURE)
+// FIX #7: GET TRANSACTION HISTORY WITH DATE FIX
 // =====================================================
 const getTransactionHistory = async (req, res) => {
   try {
@@ -540,8 +719,9 @@ const getTransactionHistory = async (req, res) => {
       paramCount++;
     }
 
+    // FIX #7: Simplified date filter - use < next day instead of <= end of day
     if (to_date && to_date.trim()) {
-      query += ` AND created_at <= $${paramCount}::date + interval '1 day' - interval '1 second'`;
+      query += ` AND created_at < $${paramCount}::date + interval '1 day'`;
       params.push(to_date.trim());
       paramCount++;
     }
@@ -567,7 +747,7 @@ const getTransactionHistory = async (req, res) => {
     }
 
     if (to_date && to_date.trim()) {
-      countQuery += ` AND created_at <= $${countParamNum}::date + interval '1 day' - interval '1 second'`;
+      countQuery += ` AND created_at < $${countParamNum}::date + interval '1 day'`;
       countParams.push(to_date.trim());
       countParamNum++;
     }
@@ -583,6 +763,8 @@ const getTransactionHistory = async (req, res) => {
         limit: validatedLimit,
         offset: validatedOffset,
         hasMore: totalCount > validatedOffset + result.rows.length,
+        currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
+        totalPages: Math.ceil(totalCount / validatedLimit),
       },
     });
   } catch (error) {
@@ -601,7 +783,8 @@ module.exports = {
   getCertificateById,
   updateCertificate, // Disabled but kept for backward compatibility
   deleteCertificate, // Disabled but kept for backward compatibility
+  clearAllCertificates, // NEW
   migrateCertificate,
-  getStockSummary, // NEW
-  getTransactionHistory, // NEW
+  getStockSummary,
+  getTransactionHistory,
 };
