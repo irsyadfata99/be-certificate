@@ -3,6 +3,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const certificateLogsRoutes = require("./routes/certificateLogsRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -37,7 +38,10 @@ app.use((req, res, next) => {
   }
 
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+  );
   res.header("Access-Control-Allow-Credentials", "true");
 
   // Handle preflight requests
@@ -68,6 +72,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/logs", certificateLogsRoutes);
+app.use("/api/users", userRoutes);
 
 // =====================================================
 // ROOT & HEALTH CHECK
