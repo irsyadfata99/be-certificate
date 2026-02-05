@@ -2,6 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
+const certificateLogsRoutes = require("./routes/certificateLogsRoutes");
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/certificates", certificateRoutes);
+app.use("/api/logs", certificateLogsRoutes);
 
 // Test route
 app.get("/", (req, res) => {

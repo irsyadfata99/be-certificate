@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { logAction } = require("./CertificateLogsController");
 
 // Create new certificate entry
 const createCertificate = async (req, res) => {
@@ -81,6 +82,14 @@ const createCertificate = async (req, res) => {
       success: true,
       message: "Certificate created successfully",
       data: result.rows[0],
+    });
+
+    await logAction({
+      certificate_id: certificate_id,
+      action_type: "CREATE",
+      description: `Created new certificate batch with SND: ${sert_snd} certs, ${medal_snd} medals | MKW: ${sert_mkw} certs, ${medal_mkw} medals | KBP: ${sert_kbp} certs, ${medal_kbp} medals`,
+      new_values: result.rows[0],
+      performed_by: req.user?.username || "System",
     });
   } catch (error) {
     console.error("Create certificate error:", error);
@@ -233,6 +242,39 @@ const updateCertificate = async (req, res) => {
       message: "Certificate updated successfully",
       data: result.rows[0],
     });
+
+    await logAction({
+      certificate_id: id,
+      action_type: "UPDATE",
+      description: `Updated certificate batch. Changes: ${
+        sert_kbp !== current.jumlah_sertifikat_kbp
+          ? `KBP certs ${current.jumlah_sertifikat_kbp}→${sert_kbp} `
+          : ""
+      }${
+        medal_kbp !== current.jumlah_medali_kbp
+          ? `KBP medals ${current.jumlah_medali_kbp}→${medal_kbp} `
+          : ""
+      }${
+        sert_snd !== current.jumlah_sertifikat_snd
+          ? `SND certs ${current.jumlah_sertifikat_snd}→${sert_snd} `
+          : ""
+      }${
+        medal_snd !== current.jumlah_medali_snd
+          ? `SND medals ${current.jumlah_medali_snd}→${medal_snd} `
+          : ""
+      }${
+        sert_mkw !== current.jumlah_sertifikat_mkw
+          ? `MKW certs ${current.jumlah_sertifikat_mkw}→${sert_mkw} `
+          : ""
+      }${
+        medal_mkw !== current.jumlah_medali_mkw
+          ? `MKW medals ${current.jumlah_medali_mkw}→${medal_mkw} `
+          : ""
+      }`.trim(),
+      old_values: current,
+      new_values: result.rows[0],
+      performed_by: req.user?.username || "System",
+    });
   } catch (error) {
     console.error("Update certificate error:", error);
     res.status(500).json({
@@ -266,9 +308,46 @@ const deleteCertificate = async (req, res) => {
       id,
     ]);
 
+    await logAction({
+      certificate_id: id,
+      action_type: "DELETE",
+      description: `Deleted certificate batch`,
+      old_values: checkExisting.rows[0],
+      performed_by: req.user?.username || "System",
+    });
+
     res.json({
       success: true,
       message: "Certificate deleted successfully",
+    });
+
+    await logAction({
+      certificate_id: certificate_id,
+      action_type: "MIGRATE",
+      description: `Migrated ${migrationItems.join(" and ")} from SND to ${destination_branch.toUpperCase()}`,
+      from_branch: "snd",
+      to_branch: destination_branch,
+      certificate_amount: certAmount,
+      medal_amount: medalAmount,
+      old_values: {
+        snd_certs: certificate.jumlah_sertifikat_snd,
+        snd_medals: certificate.jumlah_medali_snd,
+        dest_certs:
+          destination_branch === "mkw"
+            ? certificate.jumlah_sertifikat_mkw
+            : certificate.jumlah_sertifikat_kbp,
+        dest_medals:
+          destination_branch === "mkw"
+            ? certificate.jumlah_medali_mkw
+            : certificate.jumlah_medali_kbp,
+      },
+      new_values: {
+        snd_certs: newSndCert,
+        snd_medals: newSndMedal,
+        dest_certs: newDestCert,
+        dest_medals: newDestMedal,
+      },
+      performed_by: req.user?.username || "System",
     });
   } catch (error) {
     console.error("Delete certificate error:", error);
@@ -281,18 +360,23 @@ const deleteCertificate = async (req, res) => {
 };
 
 // Migrate stock from SND to other branches (certificates or medals)
+
 const migrateCertificate = async (req, res) => {
   try {
     console.log("🔄 Migrate request body:", req.body);
 
-    const { certificate_id, destination_branch, amount, type } = req.body;
+    const {
+      certificate_id,
+      destination_branch,
+      certificate_amount,
+      medal_amount,
+    } = req.body;
 
     // Validasi input
-    if (!certificate_id || !destination_branch || !amount || !type) {
+    if (!certificate_id || !destination_branch) {
       return res.status(400).json({
         success: false,
-        message:
-          "Certificate ID, destination branch, amount, and type are required",
+        message: "Certificate ID and destination branch are required",
       });
     }
 
@@ -304,20 +388,16 @@ const migrateCertificate = async (req, res) => {
       });
     }
 
-    // Validasi type
-    if (type !== "certificate" && type !== "medal") {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid type. Must be 'certificate' or 'medal'",
-      });
-    }
+    // Parse amounts - default to 0 if not provided
+    const certAmount = parseInt(certificate_amount) || 0;
+    const medalAmount = parseInt(medal_amount) || 0;
 
-    // Validasi amount
-    const transferAmount = parseInt(amount);
-    if (isNaN(transferAmount) || transferAmount <= 0) {
+    // At least one must be greater than 0
+    if (certAmount <= 0 && medalAmount <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Amount must be a positive number",
+        message:
+          "At least one amount (certificates or medals) must be greater than 0",
       });
     }
 
@@ -337,98 +417,116 @@ const migrateCertificate = async (req, res) => {
     const certificate = certResult.rows[0];
     console.log("📋 Current certificate data:", certificate);
 
-    // Determine source and destination fields based on type
-    let sourceField, destField, sourceAmount, destAmount;
-
-    if (type === "certificate") {
-      sourceField = "jumlah_sertifikat_snd";
-      sourceAmount = certificate.jumlah_sertifikat_snd;
-
-      if (destination_branch === "mkw") {
-        destField = "jumlah_sertifikat_mkw";
-        destAmount = certificate.jumlah_sertifikat_mkw;
-      } else {
-        destField = "jumlah_sertifikat_kbp";
-        destAmount = certificate.jumlah_sertifikat_kbp;
-      }
-    } else {
-      // medal
-      sourceField = "jumlah_medali_snd";
-      sourceAmount = certificate.jumlah_medali_snd;
-
-      if (destination_branch === "mkw") {
-        destField = "jumlah_medali_mkw";
-        destAmount = certificate.jumlah_medali_mkw;
-      } else {
-        destField = "jumlah_medali_kbp";
-        destAmount = certificate.jumlah_medali_kbp;
-      }
-    }
-
-    console.log("📊 Migration details:", {
-      sourceField,
-      destField,
-      sourceAmount,
-      destAmount,
-      transferAmount,
-    });
-
-    // Check if SND has enough stock
-    if (sourceAmount < transferAmount) {
+    // Check stock availability for certificates
+    if (certAmount > 0 && certificate.jumlah_sertifikat_snd < certAmount) {
       return res.status(400).json({
         success: false,
-        message: `Insufficient SND ${type} stock. Available: ${sourceAmount}, Requested: ${transferAmount}`,
+        message: `Insufficient SND certificate stock. Available: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
+      });
+    }
+
+    // Check stock availability for medals
+    if (medalAmount > 0 && certificate.jumlah_medali_snd < medalAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient SND medal stock. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmount}`,
       });
     }
 
     // Calculate new amounts
-    const newSourceAmount = sourceAmount - transferAmount;
-    const newDestAmount = destAmount + transferAmount;
+    const newSndCert = certificate.jumlah_sertifikat_snd - certAmount;
+    const newSndMedal = certificate.jumlah_medali_snd - medalAmount;
 
-    console.log("🔢 New amounts:", {
-      newSourceAmount,
-      newDestAmount,
+    let newDestCert, newDestMedal;
+    if (destination_branch === "mkw") {
+      newDestCert = certificate.jumlah_sertifikat_mkw + certAmount;
+      newDestMedal = certificate.jumlah_medali_mkw + medalAmount;
+    } else {
+      newDestCert = certificate.jumlah_sertifikat_kbp + certAmount;
+      newDestMedal = certificate.jumlah_medali_kbp + medalAmount;
+    }
+
+    console.log("📊 Migration details:", {
+      certAmount,
+      medalAmount,
+      destination_branch,
+      newSndCert,
+      newSndMedal,
+      newDestCert,
+      newDestMedal,
     });
 
-    // Build dynamic update query
+    // Build update query based on destination
+    const destCertField =
+      destination_branch === "mkw"
+        ? "jumlah_sertifikat_mkw"
+        : "jumlah_sertifikat_kbp";
+    const destMedalField =
+      destination_branch === "mkw" ? "jumlah_medali_mkw" : "jumlah_medali_kbp";
+
     const updateQuery = `
       UPDATE certificates 
-      SET ${sourceField} = $1, 
-          ${destField} = $2,
+      SET jumlah_sertifikat_snd = $1,
+          jumlah_medali_snd = $2,
+          ${destCertField} = $3,
+          ${destMedalField} = $4,
           updated_at = CURRENT_TIMESTAMP
-      WHERE certificate_id = $3
+      WHERE certificate_id = $5
       RETURNING *
     `;
 
-    console.log("📝 Update query:", updateQuery);
-    console.log("📝 Query params:", [
-      newSourceAmount,
-      newDestAmount,
+    console.log("📝 Update query params:", [
+      newSndCert,
+      newSndMedal,
+      newDestCert,
+      newDestMedal,
       certificate_id,
     ]);
 
     // Execute migration
     const result = await pool.query(updateQuery, [
-      newSourceAmount,
-      newDestAmount,
+      newSndCert,
+      newSndMedal,
+      newDestCert,
+      newDestMedal,
       certificate_id,
     ]);
 
     console.log("✅ Migration successful:", result.rows[0]);
 
+    // Build migration summary message
+    const migrationItems = [];
+    if (certAmount > 0) migrationItems.push(`${certAmount} certificate(s)`);
+    if (medalAmount > 0) migrationItems.push(`${medalAmount} medal(s)`);
+
     res.json({
       success: true,
-      message: `Successfully migrated ${transferAmount} ${type}(s) from SND to ${destination_branch.toUpperCase()}`,
+      message: `Successfully migrated ${migrationItems.join(" and ")} from SND to ${destination_branch.toUpperCase()}`,
       data: result.rows[0],
       migration: {
-        type: type,
+        certificate_id: certificate_id,
         from: "snd",
         to: destination_branch,
-        amount: transferAmount,
-        previous_snd: sourceAmount,
-        new_snd: newSourceAmount,
-        previous_dest: destAmount,
-        new_dest: newDestAmount,
+        certificates: {
+          amount: certAmount,
+          previous_snd: certificate.jumlah_sertifikat_snd,
+          new_snd: newSndCert,
+          previous_dest:
+            destination_branch === "mkw"
+              ? certificate.jumlah_sertifikat_mkw
+              : certificate.jumlah_sertifikat_kbp,
+          new_dest: newDestCert,
+        },
+        medals: {
+          amount: medalAmount,
+          previous_snd: certificate.jumlah_medali_snd,
+          new_snd: newSndMedal,
+          previous_dest:
+            destination_branch === "mkw"
+              ? certificate.jumlah_medali_mkw
+              : certificate.jumlah_medali_kbp,
+          new_dest: newDestMedal,
+        },
       },
     });
   } catch (error) {
@@ -441,11 +539,12 @@ const migrateCertificate = async (req, res) => {
   }
 };
 
+// Make sure to export it
 module.exports = {
   createCertificate,
   getAllCertificates,
   getCertificateById,
   updateCertificate,
   deleteCertificate,
-  migrateCertificate,
+  migrateCertificate, // This updated version
 };
