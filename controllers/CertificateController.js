@@ -168,7 +168,7 @@ const createCertificate = async (req, res) => {
 };
 
 // =====================================================
-// FIX #2: GET ALL CERTIFICATES WITH PAGINATION
+// FIX #2: GET ALL CERTIFICATES WITH PAGINATION + CUMULATIVE TOTALS
 // =====================================================
 const getAllCertificates = async (req, res) => {
   try {
@@ -178,8 +178,28 @@ const getAllCertificates = async (req, res) => {
     const validatedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 1000);
     const validatedOffset = Math.max(parseInt(offset) || 0, 0);
 
-    // Get paginated results
-    const result = await pool.query("SELECT * FROM certificates ORDER BY created_at DESC LIMIT $1 OFFSET $2", [validatedLimit, validatedOffset]);
+    // Get paginated results WITH CUMULATIVE TOTALS using window functions
+    const query = `
+      WITH batch_totals AS (
+        SELECT 
+          *,
+          (COALESCE(jumlah_sertifikat_snd, 0) + COALESCE(jumlah_sertifikat_mkw, 0) + COALESCE(jumlah_sertifikat_kbp, 0)) as batch_total_cert,
+          (COALESCE(jumlah_medali_snd, 0) + COALESCE(jumlah_medali_mkw, 0) + COALESCE(jumlah_medali_kbp, 0)) as batch_total_medal
+        FROM certificates
+      ),
+      cumulative_totals AS (
+        SELECT 
+          *,
+          SUM(batch_total_cert) OVER (ORDER BY created_at, id) as cumulative_total_cert,
+          SUM(batch_total_medal) OVER (ORDER BY created_at, id) as cumulative_total_medal
+        FROM batch_totals
+      )
+      SELECT * FROM cumulative_totals
+      ORDER BY created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+
+    const result = await pool.query(query, [validatedLimit, validatedOffset]);
 
     // Get total count
     const countResult = await pool.query("SELECT COUNT(*) FROM certificates");
