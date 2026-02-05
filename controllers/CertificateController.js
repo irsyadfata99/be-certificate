@@ -3,6 +3,8 @@ const pool = require("../config/database");
 // Create new certificate entry
 const createCertificate = async (req, res) => {
   try {
+    console.log("📥 Received request body:", req.body);
+
     const {
       certificate_id,
       jumlah_sertifikat_kbp,
@@ -42,7 +44,18 @@ const createCertificate = async (req, res) => {
     const sert_mkw = jumlah_sertifikat_mkw || 0;
     const medal_mkw = jumlah_medali_mkw || 0;
 
-    // Insert new certificate with separate medal and certificate counts
+    console.log("📊 Processed values:", {
+      certificate_id,
+      sert_kbp,
+      medal_kbp,
+      sert_snd,
+      medal_snd,
+      sert_mkw,
+      medal_mkw,
+    });
+
+    // Insert new certificate
+    // medali_awal_* stores the INITIAL medal count and should not change
     const result = await pool.query(
       `INSERT INTO certificates 
        (certificate_id, 
@@ -61,6 +74,8 @@ const createCertificate = async (req, res) => {
         medal_mkw,
       ],
     );
+
+    console.log("✅ Certificate created:", result.rows[0]);
 
     res.status(201).json({
       success: true,
@@ -134,6 +149,10 @@ const getCertificateById = async (req, res) => {
 const updateCertificate = async (req, res) => {
   try {
     const { id } = req.params;
+
+    console.log("📥 Update request body:", req.body);
+    console.log("📌 Certificate ID:", id);
+
     const {
       jumlah_sertifikat_kbp,
       jumlah_medali_kbp,
@@ -157,6 +176,7 @@ const updateCertificate = async (req, res) => {
     }
 
     const current = checkExisting.rows[0];
+    console.log("📋 Current data:", current);
 
     // Use current values if not provided
     const sert_kbp =
@@ -184,17 +204,29 @@ const updateCertificate = async (req, res) => {
         ? jumlah_medali_mkw
         : current.jumlah_medali_mkw;
 
-    // Update certificate
+    console.log("📊 New values:", {
+      sert_kbp,
+      medal_kbp,
+      sert_snd,
+      medal_snd,
+      sert_mkw,
+      medal_mkw,
+    });
+
+    // Update certificate - FIXED: Don't update medali_awal_* fields
+    // medali_awal_* should only be set during creation and remain unchanged
     const result = await pool.query(
       `UPDATE certificates 
-       SET jumlah_sertifikat_kbp = $1, jumlah_medali_kbp = $2, medali_awal_kbp = $2,
-           jumlah_sertifikat_snd = $3, jumlah_medali_snd = $4, medali_awal_snd = $4,
-           jumlah_sertifikat_mkw = $5, jumlah_medali_mkw = $6, medali_awal_mkw = $6,
+       SET jumlah_sertifikat_kbp = $1, jumlah_medali_kbp = $2,
+           jumlah_sertifikat_snd = $3, jumlah_medali_snd = $4,
+           jumlah_sertifikat_mkw = $5, jumlah_medali_mkw = $6,
            updated_at = CURRENT_TIMESTAMP
        WHERE certificate_id = $7
        RETURNING *`,
       [sert_kbp, medal_kbp, sert_snd, medal_snd, sert_mkw, medal_mkw, id],
     );
+
+    console.log("✅ Certificate updated:", result.rows[0]);
 
     res.json({
       success: true,
@@ -251,6 +283,8 @@ const deleteCertificate = async (req, res) => {
 // Migrate stock from SND to other branches (certificates or medals)
 const migrateCertificate = async (req, res) => {
   try {
+    console.log("🔄 Migrate request body:", req.body);
+
     const { certificate_id, destination_branch, amount, type } = req.body;
 
     // Validasi input
@@ -301,8 +335,9 @@ const migrateCertificate = async (req, res) => {
     }
 
     const certificate = certResult.rows[0];
+    console.log("📋 Current certificate data:", certificate);
 
-    // Determine source field based on type
+    // Determine source and destination fields based on type
     let sourceField, destField, sourceAmount, destAmount;
 
     if (type === "certificate") {
@@ -330,6 +365,14 @@ const migrateCertificate = async (req, res) => {
       }
     }
 
+    console.log("📊 Migration details:", {
+      sourceField,
+      destField,
+      sourceAmount,
+      destAmount,
+      transferAmount,
+    });
+
     // Check if SND has enough stock
     if (sourceAmount < transferAmount) {
       return res.status(400).json({
@@ -342,6 +385,11 @@ const migrateCertificate = async (req, res) => {
     const newSourceAmount = sourceAmount - transferAmount;
     const newDestAmount = destAmount + transferAmount;
 
+    console.log("🔢 New amounts:", {
+      newSourceAmount,
+      newDestAmount,
+    });
+
     // Build dynamic update query
     const updateQuery = `
       UPDATE certificates 
@@ -352,6 +400,13 @@ const migrateCertificate = async (req, res) => {
       RETURNING *
     `;
 
+    console.log("📝 Update query:", updateQuery);
+    console.log("📝 Query params:", [
+      newSourceAmount,
+      newDestAmount,
+      certificate_id,
+    ]);
+
     // Execute migration
     const result = await pool.query(updateQuery, [
       newSourceAmount,
@@ -359,9 +414,11 @@ const migrateCertificate = async (req, res) => {
       certificate_id,
     ]);
 
+    console.log("✅ Migration successful:", result.rows[0]);
+
     res.json({
       success: true,
-      message: `Successfully migrated ${transferAmount} ${type}s from SND to ${destination_branch.toUpperCase()}`,
+      message: `Successfully migrated ${transferAmount} ${type}(s) from SND to ${destination_branch.toUpperCase()}`,
       data: result.rows[0],
       migration: {
         type: type,
