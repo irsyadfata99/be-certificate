@@ -48,6 +48,8 @@ const updateUsername = async (req, res) => {
     const userId = req.user.id;
     const { new_username, current_password } = req.body;
 
+    console.log("📝 Update username request for user ID:", userId);
+
     // Validation
     if (!new_username || !new_username.trim()) {
       await client.query("ROLLBACK");
@@ -172,7 +174,7 @@ const updateUsername = async (req, res) => {
 };
 
 // =====================================================
-// UPDATE PASSWORD
+// UPDATE PASSWORD - IMPROVED WITH DETAILED LOGGING
 // =====================================================
 const updatePassword = async (req, res) => {
   const client = await pool.connect();
@@ -183,8 +185,13 @@ const updatePassword = async (req, res) => {
     const userId = req.user.id;
     const { current_password, new_password, confirm_password } = req.body;
 
+    console.log("🔐 Password update request received");
+    console.log("👤 User ID:", userId);
+    console.log("📋 Request body keys:", Object.keys(req.body));
+
     // Validation
     if (!current_password || !new_password || !confirm_password) {
+      console.error("❌ Validation failed: Missing fields");
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
@@ -194,6 +201,7 @@ const updatePassword = async (req, res) => {
 
     // Check if new password matches confirmation
     if (new_password !== confirm_password) {
+      console.error("❌ Validation failed: Passwords don't match");
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
@@ -203,6 +211,7 @@ const updatePassword = async (req, res) => {
 
     // Password strength validation
     if (new_password.length < 8) {
+      console.error("❌ Validation failed: Password too short");
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
@@ -211,11 +220,13 @@ const updatePassword = async (req, res) => {
     }
 
     // Get current user
+    console.log("🔍 Fetching user from database...");
     const userResult = await client.query("SELECT * FROM users WHERE id = $1", [
       userId,
     ]);
 
     if (userResult.rows.length === 0) {
+      console.error("❌ User not found in database");
       await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
@@ -224,11 +235,14 @@ const updatePassword = async (req, res) => {
     }
 
     const user = userResult.rows[0];
+    console.log("✅ User found:", user.username);
 
     // Verify current password
+    console.log("🔐 Verifying current password...");
     const validPassword = await bcrypt.compare(current_password, user.password);
 
     if (!validPassword) {
+      console.error("❌ Current password is incorrect");
       await client.query("ROLLBACK");
       return res.status(401).json({
         success: false,
@@ -236,9 +250,12 @@ const updatePassword = async (req, res) => {
       });
     }
 
+    console.log("✅ Current password verified");
+
     // Check if new password is same as current
     const sameAsOld = await bcrypt.compare(new_password, user.password);
     if (sameAsOld) {
+      console.error("❌ New password is same as current password");
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
@@ -247,9 +264,12 @@ const updatePassword = async (req, res) => {
     }
 
     // Hash new password
+    console.log("🔒 Hashing new password...");
     const hashedPassword = await bcrypt.hash(new_password, 10);
+    console.log("✅ Password hashed successfully");
 
     // Update password
+    console.log("💾 Updating password in database...");
     await client.query(
       "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
       [hashedPassword, userId],
@@ -257,7 +277,7 @@ const updatePassword = async (req, res) => {
 
     await client.query("COMMIT");
 
-    console.log(`✅ Password updated for user: ${user.username}`);
+    console.log(`✅ Password updated successfully for user: ${user.username}`);
 
     res.json({
       success: true,
@@ -265,7 +285,8 @@ const updatePassword = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Update password error:", error);
+    console.error("💥 Update password error:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Server error",

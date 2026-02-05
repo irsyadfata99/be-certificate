@@ -8,6 +8,8 @@ const {
 } = require("../controllers/UserController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
+console.log("✅ User routes loaded");
+
 // Get current user profile
 router.get("/profile", verifyToken, getProfile);
 
