@@ -1,388 +1,454 @@
-// controllers/moduleController.js - FIXED VERSION
 const pool = require("../config/database");
 
-// =====================================================
-// GET ALL MODULES (with pagination)
-// =====================================================
-exports.getAllModules = async (req, res) => {
-  try {
-    const { limit = 10, offset = 0 } = req.query;
+const ModuleController = {
+  // Get all modules with pagination
+  getAllModules: async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
 
-    // Get total count
-    const countResult = await pool.query("SELECT COUNT(*) FROM modules");
-    const total = parseInt(countResult.rows[0].count);
+      // Get total count
+      const countResult = await pool.query("SELECT COUNT(*) FROM modules");
+      const totalModules = parseInt(countResult.rows[0].count);
 
-    // Get modules with pagination
-    const result = await pool.query(
-      `SELECT id, module_code, module_name, division, min_age, max_age, created_at, updated_at
-       FROM modules 
-       ORDER BY created_at DESC
-       LIMIT $1 OFFSET $2`,
-      [parseInt(limit), parseInt(offset)],
-    );
+      // Get paginated modules
+      const result = await pool.query(
+        `SELECT id, module_code, module_name, division, min_age, max_age, 
+                created_at, updated_at
+         FROM modules
+         ORDER BY created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset],
+      );
 
-    const totalPages = Math.ceil(total / parseInt(limit));
-    const currentPage = Math.floor(parseInt(offset) / parseInt(limit)) + 1;
-
-    res.json({
-      success: true,
-      data: result.rows,
-      meta: {
+      res.json({
+        success: true,
+        data: result.rows,
         pagination: {
-          total,
-          limit: parseInt(limit),
-          offset: parseInt(offset),
-          totalPages,
-          currentPage,
+          currentPage: page,
+          totalPages: Math.ceil(totalModules / limit),
+          totalItems: totalModules,
+          itemsPerPage: limit,
         },
-      },
-    });
-  } catch (error) {
-    console.error("Error getting modules:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch modules",
-      error: error.message,
-    });
-  }
-};
-
-// =====================================================
-// GET MODULE BY ID
-// =====================================================
-exports.getModuleById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query("SELECT * FROM modules WHERE id = $1", [
-      id,
-    ]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
+      });
+    } catch (error) {
+      console.error("Error fetching modules:", error);
+      res.status(500).json({
         success: false,
-        message: "Module not found",
+        message: "Failed to fetch modules",
+        error: error.message,
       });
     }
+  },
 
-    res.json({
-      success: true,
-      data: result.rows[0],
-    });
-  } catch (error) {
-    console.error("Error getting module:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch module",
-      error: error.message,
-    });
-  }
-};
+  // Get single module by ID
+  getModuleById: async (req, res) => {
+    try {
+      const { id } = req.params;
 
-// =====================================================
-// CREATE MODULE - FIXED VALIDATION
-// =====================================================
-exports.createModule = async (req, res) => {
-  const client = await pool.connect();
+      const result = await pool.query(
+        `SELECT id, module_code, module_name, division, min_age, max_age, 
+                created_at, updated_at
+         FROM modules
+         WHERE id = $1`,
+        [id],
+      );
 
-  try {
-    const { module_code, module_name, division, min_age, max_age } = req.body;
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Module not found",
+        });
+      }
 
-    // ✅ FLEXIBLE VALIDATION - Allow custom module codes
-    const validations = [];
-
-    if (!module_code || module_code.trim() === "") {
-      validations.push("Module code is required");
-    } else if (module_code.trim().length > 50) {
-      validations.push("Module code cannot exceed 50 characters");
-    }
-
-    if (!module_name || module_name.trim() === "") {
-      validations.push("Module name is required");
-    }
-
-    if (!division || !["JK", "LK"].includes(division)) {
-      validations.push("Division must be either JK or LK");
-    }
-
-    if (
-      min_age === undefined ||
-      min_age === null ||
-      isNaN(min_age) ||
-      min_age < 3 ||
-      min_age > 18
-    ) {
-      validations.push("Minimum age must be between 3 and 18");
-    }
-
-    if (
-      max_age === undefined ||
-      max_age === null ||
-      isNaN(max_age) ||
-      max_age < 3 ||
-      max_age > 18
-    ) {
-      validations.push("Maximum age must be between 3 and 18");
-    }
-
-    if (parseInt(min_age) > parseInt(max_age)) {
-      validations.push("Minimum age cannot be greater than maximum age");
-    }
-
-    if (validations.length > 0) {
-      return res.status(400).json({
+      res.json({
+        success: true,
+        data: result.rows[0],
+      });
+    } catch (error) {
+      console.error("Error fetching module:", error);
+      res.status(500).json({
         success: false,
-        message: validations.join(", "),
-        errors: validations,
+        message: "Failed to fetch module",
+        error: error.message,
       });
     }
+  },
 
-    await client.query("BEGIN");
+  // Create new module
+  createModule: async (req, res) => {
+    const client = await pool.connect();
 
-    // Check for duplicate module_code
-    const duplicateCheck = await client.query(
-      "SELECT id FROM modules WHERE module_code = $1",
-      [module_code.trim().toUpperCase()],
-    );
+    try {
+      const { module_code, module_name, division, min_age, max_age } = req.body;
 
-    if (duplicateCheck.rows.length > 0) {
+      // Validation
+      if (
+        !module_code ||
+        !module_name ||
+        !division ||
+        min_age === undefined ||
+        max_age === undefined
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required",
+        });
+      }
+
+      // Validate division
+      if (!["JK", "LK"].includes(division)) {
+        return res.status(400).json({
+          success: false,
+          message: "Division must be either JK or LK",
+        });
+      }
+
+      // Validate age range
+      const minAge = parseInt(min_age);
+      const maxAge = parseInt(max_age);
+
+      if (isNaN(minAge) || isNaN(maxAge)) {
+        return res.status(400).json({
+          success: false,
+          message: "Age values must be valid numbers",
+        });
+      }
+
+      if (minAge < 3 || minAge > 18 || maxAge < 3 || maxAge > 18) {
+        return res.status(400).json({
+          success: false,
+          message: "Age range must be between 3 and 18",
+        });
+      }
+
+      if (minAge > maxAge) {
+        return res.status(400).json({
+          success: false,
+          message: "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      await client.query("BEGIN");
+
+      // Check if module code already exists
+      const existingModule = await client.query(
+        "SELECT id FROM modules WHERE module_code = $1",
+        [module_code],
+      );
+
+      if (existingModule.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          success: false,
+          message: "Module code already exists",
+        });
+      }
+
+      // Insert new module
+      const result = await client.query(
+        `INSERT INTO modules (module_code, module_name, division, min_age, max_age)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, module_code, module_name, division, min_age, max_age, created_at`,
+        [module_code, module_name, division, minAge, maxAge],
+      );
+
+      // Log the activity to module_logs table
+      try {
+        await client.query(
+          `INSERT INTO module_logs (module_id, module_code, action_type, description, performed_by, ip_address)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            result.rows[0].id,
+            module_code,
+            "MODULE_CREATED",
+            `Module ${module_code} - ${module_name} created`,
+            req.user?.username || "System",
+            req.ip || req.connection.remoteAddress,
+          ],
+        );
+      } catch (logError) {
+        console.error("Error logging module creation:", logError);
+        // Continue even if logging fails
+      }
+
+      await client.query("COMMIT");
+
+      res.status(201).json({
+        success: true,
+        message: "Module created successfully",
+        data: result.rows[0],
+      });
+    } catch (error) {
       await client.query("ROLLBACK");
-      return res.status(409).json({
+      console.error("Error creating module:", error);
+
+      // Handle specific PostgreSQL errors
+      if (error.code === "23505") {
+        // Unique violation
+        res.status(409).json({
+          success: false,
+          message: "Module code already exists",
+        });
+      } else if (error.code === "23514") {
+        // Check violation
+        res.status(400).json({
+          success: false,
+          message: "Invalid data: check constraints failed",
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to create module",
+          error: error.message,
+        });
+      }
+    } finally {
+      client.release();
+    }
+  },
+
+  // Update module
+  updateModule: async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const { id } = req.params;
+      const { module_code, module_name, division, min_age, max_age } = req.body;
+
+      // Validation
+      if (
+        !module_code ||
+        !module_name ||
+        !division ||
+        min_age === undefined ||
+        max_age === undefined
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required",
+        });
+      }
+
+      // Validate division
+      if (!["JK", "LK"].includes(division)) {
+        return res.status(400).json({
+          success: false,
+          message: "Division must be either JK or LK",
+        });
+      }
+
+      // Validate age range
+      const minAge = parseInt(min_age);
+      const maxAge = parseInt(max_age);
+
+      if (isNaN(minAge) || isNaN(maxAge)) {
+        return res.status(400).json({
+          success: false,
+          message: "Age values must be valid numbers",
+        });
+      }
+
+      if (minAge < 3 || minAge > 18 || maxAge < 3 || maxAge > 18) {
+        return res.status(400).json({
+          success: false,
+          message: "Age range must be between 3 and 18",
+        });
+      }
+
+      if (minAge > maxAge) {
+        return res.status(400).json({
+          success: false,
+          message: "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      await client.query("BEGIN");
+
+      // Check if module exists
+      const existingModule = await client.query(
+        "SELECT id, module_code, module_name FROM modules WHERE id = $1",
+        [id],
+      );
+
+      if (existingModule.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          success: false,
+          message: "Module not found",
+        });
+      }
+
+      // Check if new module code is already used by another module
+      const duplicateCheck = await client.query(
+        "SELECT id FROM modules WHERE module_code = $1 AND id != $2",
+        [module_code, id],
+      );
+
+      if (duplicateCheck.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          success: false,
+          message: "Module code already exists",
+        });
+      }
+
+      // Update module
+      const result = await client.query(
+        `UPDATE modules
+         SET module_code = $1, module_name = $2, division = $3, 
+             min_age = $4, max_age = $5, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $6
+         RETURNING id, module_code, module_name, division, min_age, max_age, updated_at`,
+        [module_code, module_name, division, minAge, maxAge, id],
+      );
+
+      // Log the activity
+      try {
+        await client.query(
+          `INSERT INTO module_logs (module_id, module_code, action_type, description, performed_by, ip_address)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            id,
+            module_code,
+            "MODULE_UPDATED",
+            `Module ${module_code} - ${module_name} updated`,
+            req.user?.username || "System",
+            req.ip || req.connection.remoteAddress,
+          ],
+        );
+      } catch (logError) {
+        console.error("Error logging module update:", logError);
+        // Continue even if logging fails
+      }
+
+      await client.query("COMMIT");
+
+      res.json({
+        success: true,
+        message: "Module updated successfully",
+        data: result.rows[0],
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("Error updating module:", error);
+
+      // Handle specific PostgreSQL errors
+      if (error.code === "23505") {
+        res.status(409).json({
+          success: false,
+          message: "Module code already exists",
+        });
+      } else if (error.code === "23514") {
+        res.status(400).json({
+          success: false,
+          message: "Invalid data: check constraints failed",
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to update module",
+          error: error.message,
+        });
+      }
+    } finally {
+      client.release();
+    }
+  },
+
+  // Delete module
+  deleteModule: async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const { id } = req.params;
+
+      await client.query("BEGIN");
+
+      // Check if module exists
+      const existingModule = await client.query(
+        "SELECT id, module_code, module_name FROM modules WHERE id = $1",
+        [id],
+      );
+
+      if (existingModule.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          success: false,
+          message: "Module not found",
+        });
+      }
+
+      const moduleData = existingModule.rows[0];
+
+      // Log the activity before deletion
+      try {
+        await client.query(
+          `INSERT INTO module_logs (module_id, module_code, action_type, description, performed_by, ip_address)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            id,
+            moduleData.module_code,
+            "MODULE_DELETED",
+            `Module ${moduleData.module_code} - ${moduleData.module_name} deleted`,
+            req.user?.username || "System",
+            req.ip || req.connection.remoteAddress,
+          ],
+        );
+      } catch (logError) {
+        console.error("Error logging module deletion:", logError);
+        // Continue even if logging fails
+      }
+
+      // Delete module (cascade will handle module_logs)
+      await client.query("DELETE FROM modules WHERE id = $1", [id]);
+
+      await client.query("COMMIT");
+
+      res.json({
+        success: true,
+        message: "Module deleted successfully",
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("Error deleting module:", error);
+      res.status(500).json({
         success: false,
-        message: "Module code already exists",
+        message: "Failed to delete module",
+        error: error.message,
+      });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Get module statistics
+  getModuleStats: async (req, res) => {
+    try {
+      const stats = await pool.query(`
+        SELECT 
+          COUNT(*) as total_modules,
+          COUNT(CASE WHEN division = 'JK' THEN 1 END) as jk_modules,
+          COUNT(CASE WHEN division = 'LK' THEN 1 END) as lk_modules,
+          MIN(min_age) as youngest_age,
+          MAX(max_age) as oldest_age
+        FROM modules
+      `);
+
+      res.json({
+        success: true,
+        data: stats.rows[0],
+      });
+    } catch (error) {
+      console.error("Error fetching module stats:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch module statistics",
+        error: error.message,
       });
     }
-
-    // Insert new module (keep uppercase for consistency)
-    const result = await client.query(
-      `INSERT INTO modules (module_code, module_name, division, min_age, max_age)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        module_code.trim().toUpperCase(), // Still uppercase for consistency
-        module_name.trim(),
-        division.toUpperCase(),
-        parseInt(min_age),
-        parseInt(max_age),
-      ],
-    );
-
-    // Log the action
-    await client.query(
-      `INSERT INTO certificate_logs (action, details, user_id)
-       VALUES ($1, $2, $3)`,
-      ["MODULE_CREATED", `Module ${module_code} created`, req.user?.id || null],
-    );
-
-    await client.query("COMMIT");
-
-    res.status(201).json({
-      success: true,
-      message: "Module created successfully",
-      data: result.rows[0],
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error creating module:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create module",
-      error: error.message,
-    });
-  } finally {
-    client.release();
-  }
+  },
 };
 
-// =====================================================
-// UPDATE MODULE - FIXED VALIDATION
-// =====================================================
-exports.updateModule = async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { id } = req.params;
-    const { module_code, module_name, division, min_age, max_age } = req.body;
-
-    // ✅ FLEXIBLE VALIDATION - Allow custom module codes
-    const validations = [];
-
-    if (!module_code || module_code.trim() === "") {
-      validations.push("Module code is required");
-    } else if (module_code.trim().length > 50) {
-      validations.push("Module code cannot exceed 50 characters");
-    }
-
-    if (!module_name || module_name.trim() === "") {
-      validations.push("Module name is required");
-    }
-
-    if (!division || !["JK", "LK"].includes(division)) {
-      validations.push("Division must be either JK or LK");
-    }
-
-    if (
-      min_age === undefined ||
-      min_age === null ||
-      isNaN(min_age) ||
-      min_age < 3 ||
-      min_age > 18
-    ) {
-      validations.push("Minimum age must be between 3 and 18");
-    }
-
-    if (
-      max_age === undefined ||
-      max_age === null ||
-      isNaN(max_age) ||
-      max_age < 3 ||
-      max_age > 18
-    ) {
-      validations.push("Maximum age must be between 3 and 18");
-    }
-
-    if (parseInt(min_age) > parseInt(max_age)) {
-      validations.push("Minimum age cannot be greater than maximum age");
-    }
-
-    if (validations.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: validations.join(", "),
-        errors: validations,
-      });
-    }
-
-    await client.query("BEGIN");
-
-    // Check if module exists
-    const moduleCheck = await client.query(
-      "SELECT * FROM modules WHERE id = $1",
-      [id],
-    );
-
-    if (moduleCheck.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({
-        success: false,
-        message: "Module not found",
-      });
-    }
-
-    // Check for duplicate module_code (excluding current module)
-    const duplicateCheck = await client.query(
-      "SELECT id FROM modules WHERE module_code = $1 AND id != $2",
-      [module_code.trim().toUpperCase(), id],
-    );
-
-    if (duplicateCheck.rows.length > 0) {
-      await client.query("ROLLBACK");
-      return res.status(409).json({
-        success: false,
-        message: "Module code already exists",
-      });
-    }
-
-    // Update module
-    const result = await client.query(
-      `UPDATE modules 
-       SET module_code = $1, module_name = $2, division = $3, 
-           min_age = $4, max_age = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
-       RETURNING *`,
-      [
-        module_code.trim().toUpperCase(),
-        module_name.trim(),
-        division.toUpperCase(),
-        parseInt(min_age),
-        parseInt(max_age),
-        id,
-      ],
-    );
-
-    // Log the action
-    await client.query(
-      `INSERT INTO certificate_logs (action, details, user_id)
-       VALUES ($1, $2, $3)`,
-      ["MODULE_UPDATED", `Module ${module_code} updated`, req.user?.id || null],
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      message: "Module updated successfully",
-      data: result.rows[0],
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error updating module:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update module",
-      error: error.message,
-    });
-  } finally {
-    client.release();
-  }
-};
-
-// =====================================================
-// DELETE MODULE
-// =====================================================
-exports.deleteModule = async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { id } = req.params;
-
-    await client.query("BEGIN");
-
-    // Check if module exists
-    const moduleCheck = await client.query(
-      "SELECT * FROM modules WHERE id = $1",
-      [id],
-    );
-
-    if (moduleCheck.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({
-        success: false,
-        message: "Module not found",
-      });
-    }
-
-    const module = moduleCheck.rows[0];
-
-    // Delete module
-    await client.query("DELETE FROM modules WHERE id = $1", [id]);
-
-    // Log the action
-    await client.query(
-      `INSERT INTO certificate_logs (action, details, user_id)
-       VALUES ($1, $2, $3)`,
-      [
-        "MODULE_DELETED",
-        `Module ${module.module_code} deleted`,
-        req.user?.id || null,
-      ],
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      message: "Module deleted successfully",
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error deleting module:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete module",
-      error: error.message,
-    });
-  } finally {
-    client.release();
-  }
-};
+module.exports = ModuleController;
