@@ -4,7 +4,8 @@ const authRoutes = require("./routes/authRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const certificateLogsRoutes = require("./routes/certificateLogsRoutes");
 const userRoutes = require("./routes/userRoutes");
-const teacherRoutes = require("./routes/teacherRoutes"); // NEW
+const teacherRoutes = require("./routes/teacherRoutes");
+const moduleRoutes = require("./routes/moduleRoutes"); // NEW
 
 const app = express();
 
@@ -65,7 +66,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/logs", certificateLogsRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/teachers", teacherRoutes); // NEW
+app.use("/api/teachers", teacherRoutes);
+app.use("/api/modules", moduleRoutes); // NEW
 
 // =====================================================
 // ROOT & HEALTH CHECK
@@ -74,7 +76,7 @@ app.use("/api/teachers", teacherRoutes); // NEW
 app.get("/", (req, res) => {
   res.json({
     message: "Certificate Management API is running",
-    version: "2.1.0", // Updated version
+    version: "2.2.0", // Updated version
     endpoints: {
       auth: "/api/auth",
       certificates: "/api/certificates",
@@ -82,7 +84,8 @@ app.get("/", (req, res) => {
       history: "/api/certificates/history",
       migrate: "/api/certificates/migrate",
       logs: "/api/logs",
-      teachers: "/api/teachers", // NEW
+      teachers: "/api/teachers",
+      modules: "/api/modules", // NEW
     },
   });
 });
@@ -127,6 +130,7 @@ app.listen(PORT, () => {
   console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🔗 API: http://localhost:${PORT}`);
   console.log(`📊 Summary: http://localhost:${PORT}/api/certificates/summary`);
-  console.log(`👥 Teachers: http://localhost:${PORT}/api/teachers`); // NEW
+  console.log(`👥 Teachers: http://localhost:${PORT}/api/teachers`);
+  console.log(`📚 Modules: http://localhost:${PORT}/api/modules`); // NEW
   console.log("=".repeat(50));
 });
