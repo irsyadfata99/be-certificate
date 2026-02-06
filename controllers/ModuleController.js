@@ -1,39 +1,127 @@
 const pool = require("../config/database");
 
 const ModuleController = {
-  // Get all modules with pagination
+  // Get all modules with pagination and filters
   getAllModules: async (req, res) => {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const offset = (page - 1) * limit;
+      // Pagination parameters (consistent with certificates)
+      const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
+      const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
-      // Get total count
-      const countResult = await pool.query("SELECT COUNT(*) FROM modules");
+      // Filter parameters
+      const { search, division, min_age, max_age } = req.query;
+
+      console.log("📥 Get modules with filters:", {
+        limit,
+        offset,
+        search,
+        division,
+        min_age,
+        max_age,
+      });
+
+      // Build WHERE clause
+      let whereConditions = [];
+      let queryParams = [];
+      let paramCount = 1;
+
+      // Search filter (module_code OR module_name) - CASE INSENSITIVE
+      if (search && search.trim()) {
+        const searchTerm = `%${search.trim().toLowerCase()}%`;
+        whereConditions.push(
+          `(LOWER(module_code) LIKE $${paramCount} OR LOWER(module_name) LIKE $${paramCount})`,
+        );
+        queryParams.push(searchTerm);
+        paramCount++;
+        console.log("🔍 Search filter applied:", searchTerm);
+      }
+
+      // Division filter
+      if (division && division.trim()) {
+        const divisionUpper = division.trim().toUpperCase();
+        if (["JK", "LK"].includes(divisionUpper)) {
+          whereConditions.push(`division = $${paramCount}`);
+          queryParams.push(divisionUpper);
+          paramCount++;
+          console.log("📊 Division filter applied:", divisionUpper);
+        }
+      }
+
+      // Min age filter (modules where max_age >= specified min_age)
+      if (min_age && !isNaN(parseInt(min_age))) {
+        whereConditions.push(`max_age >= $${paramCount}`);
+        queryParams.push(parseInt(min_age));
+        paramCount++;
+        console.log("📈 Min age filter applied:", min_age);
+      }
+
+      // Max age filter (modules where min_age <= specified max_age)
+      if (max_age && !isNaN(parseInt(max_age))) {
+        whereConditions.push(`min_age <= $${paramCount}`);
+        queryParams.push(parseInt(max_age));
+        paramCount++;
+        console.log("📉 Max age filter applied:", max_age);
+      }
+
+      const whereClause =
+        whereConditions.length > 0
+          ? "WHERE " + whereConditions.join(" AND ")
+          : "";
+
+      console.log("🔧 WHERE clause:", whereClause);
+      console.log("🔧 Query params:", queryParams);
+
+      // Get total count with filters
+      const countQuery = `SELECT COUNT(*) FROM modules ${whereClause}`;
+      console.log("🔢 Count query:", countQuery);
+
+      const countResult = await pool.query(countQuery, queryParams);
       const totalModules = parseInt(countResult.rows[0].count);
 
-      // Get paginated modules
-      const result = await pool.query(
-        `SELECT id, module_code, module_name, division, min_age, max_age, 
-                created_at, updated_at
-         FROM modules
-         ORDER BY created_at DESC
-         LIMIT $1 OFFSET $2`,
-        [limit, offset],
-      );
+      console.log("📊 Total modules matching filter:", totalModules);
+
+      // Get paginated modules with filters
+      const dataQuery = `
+        SELECT id, module_code, module_name, division, min_age, max_age, 
+               created_at, updated_at
+        FROM modules
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT $${paramCount} OFFSET $${paramCount + 1}
+      `;
+
+      console.log("📋 Data query:", dataQuery);
+
+      const dataParams = [...queryParams, limit, offset];
+      console.log("📋 Data params:", dataParams);
+
+      const result = await pool.query(dataQuery, dataParams);
+
+      console.log(`✅ Returned ${result.rows.length}/${totalModules} modules`);
 
       res.json({
         success: true,
         data: result.rows,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(totalModules / limit),
-          totalItems: totalModules,
-          itemsPerPage: limit,
+        meta: {
+          pagination: {
+            total: totalModules,
+            limit: limit,
+            offset: offset,
+            hasMore: totalModules > offset + result.rows.length,
+            currentPage: Math.floor(offset / limit) + 1,
+            totalPages: Math.ceil(totalModules / limit),
+          },
+          filters: {
+            search: search || null,
+            division: division || null,
+            min_age: min_age || null,
+            max_age: max_age || null,
+          },
+          count: result.rows.length,
         },
       });
     } catch (error) {
-      console.error("Error fetching modules:", error);
+      console.error("❌ Error fetching modules:", error);
       res.status(500).json({
         success: false,
         message: "Failed to fetch modules",
