@@ -39,24 +39,36 @@ const login = async (req, res) => {
       });
     }
 
-    // Generate JWT token
+    // Generate JWT token with role
     const token = jwt.sign(
       {
         id: user.id,
         username: user.username,
+        role: user.role, // NEW: Include role in token
       },
       process.env.JWT_SECRET,
       { expiresIn: "24h" },
     );
 
+    // Prepare user data for response
+    const userData = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+    };
+
+    // Include teacher-specific data if user is teacher
+    if (user.role === "teacher") {
+      userData.teacher_name = user.teacher_name;
+      userData.teacher_division = user.teacher_division;
+      userData.teacher_branch = user.teacher_branch;
+    }
+
     res.json({
       success: true,
       message: "Login successful",
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-      },
+      user: userData,
     });
   } catch (error) {
     console.error("Login error:", error);
