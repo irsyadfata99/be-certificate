@@ -1,14 +1,27 @@
 // Certificate Logs Controller - FIXED VERSION
 
 const pool = require("../config/database");
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
+const logger = require("../utils/logger");
+const CONSTANTS = require("../utils/constants");
 
 // =====================================================
-// FIX #5: IMPROVED LOG ACTION WITH BACKUP MECHANISM
+// IMPROVED LOG ACTION WITH ASYNC FILE BACKUP
 // =====================================================
 async function logAction(data) {
-  const { certificate_id, action_type, description, from_branch = null, to_branch = null, certificate_amount = 0, medal_amount = 0, old_values = null, new_values = null, performed_by = "System" } = data;
+  const {
+    certificateId,
+    actionType,
+    description,
+    fromBranch = null,
+    toBranch = null,
+    certificateAmount = 0,
+    medalAmount = 0,
+    oldValues = null,
+    newValues = null,
+    performedBy = "System",
+  } = data;
 
   try {
     await pool.query(
@@ -16,20 +29,33 @@ async function logAction(data) {
        (certificate_id, action_type, description, from_branch, to_branch, 
         certificate_amount, medal_amount, old_values, new_values, performed_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [certificate_id, action_type, description, from_branch, to_branch, certificate_amount, medal_amount, old_values ? JSON.stringify(old_values) : null, new_values ? JSON.stringify(new_values) : null, performed_by],
+      [
+        certificateId,
+        actionType,
+        description,
+        fromBranch,
+        toBranch,
+        certificateAmount,
+        medalAmount,
+        oldValues ? JSON.stringify(oldValues) : null,
+        newValues ? JSON.stringify(newValues) : null,
+        performedBy,
+      ],
     );
-    console.log("📝 Log created:", action_type, certificate_id);
+    logger.info(`Log created: ${actionType} - ${certificateId}`);
   } catch (error) {
-    console.error("❌ CRITICAL: Failed to create log:", error);
+    logger.error("CRITICAL: Failed to create log:", error);
 
-    // FIX #5: Create backup log file when database logging fails
+    // FIXED: Use async file write instead of sync
     try {
       const logDir = path.join(__dirname, "..", "logs");
       const logFile = path.join(logDir, "failed-logs.jsonl");
 
       // Create logs directory if it doesn't exist
-      if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
+      try {
+        await fs.access(logDir);
+      } catch {
+        await fs.mkdir(logDir, { recursive: true });
       }
 
       const failedLog = {
@@ -37,77 +63,92 @@ async function logAction(data) {
         error: error.message,
         errorStack: error.stack,
         logData: {
-          certificate_id,
-          action_type,
+          certificateId,
+          actionType,
           description,
-          from_branch,
-          to_branch,
-          certificate_amount,
-          medal_amount,
-          old_values,
-          new_values,
-          performed_by,
+          fromBranch,
+          toBranch,
+          certificateAmount,
+          medalAmount,
+          oldValues,
+          newValues,
+          performedBy,
         },
       };
 
-      // Append to JSONL file (each line is a valid JSON object)
-      fs.appendFileSync(logFile, JSON.stringify(failedLog) + "\n");
+      // FIXED: Async file append
+      await fs.appendFile(logFile, JSON.stringify(failedLog) + "\n");
 
-      console.log(`💾 Failed log saved to backup file: ${logFile}`);
-      console.log("⚠️  WARNING: Audit log failed to write to database! Check failed-logs.jsonl");
+      logger.info(`Failed log saved to backup file: ${logFile}`);
+      logger.warn(
+        "WARNING: Audit log failed to write to database! Check failed-logs.jsonl",
+      );
     } catch (fileError) {
-      console.error("❌ DOUBLE FAILURE: Could not save to backup file either:", fileError);
-      // At this point, we've done everything we can
-      // Consider sending an alert notification here (email, Slack, etc.)
+      logger.error(
+        "DOUBLE FAILURE: Could not save to backup file either:",
+        fileError,
+      );
     }
 
     // Don't throw error - logging shouldn't break the main operation
-    // But we've at least tried to preserve the log data
   }
 }
 
 // =====================================================
-// FIX #7: GET LOGS WITH IMPROVED DATE FILTER
+// GET LOGS WITH IMPROVED DATE FILTER
 // =====================================================
 const getLogs = async (req, res) => {
   try {
-    const { certificate_id, action_type, from_date, to_date, search, limit = 100, offset = 0 } = req.query;
+    const {
+      certificate_id: certificateId,
+      action_type: actionType,
+      from_date: fromDate,
+      to_date: toDate,
+      search,
+      limit = CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT,
+      offset = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+    } = req.query;
 
-    console.log("📥 Fetching logs with filters:", req.query);
+    logger.info("Fetching logs with filters:", req.query);
 
     // Validate limit and offset
-    const validatedLimit = Math.min(Math.max(parseInt(limit) || 100, 1), 1000);
-    const validatedOffset = Math.max(parseInt(offset) || 0, 0);
+    const validatedLimit = Math.min(
+      Math.max(parseInt(limit) || CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, 1),
+      CONSTANTS.PAGINATION.MAX_LIMIT,
+    );
+    const validatedOffset = Math.max(
+      parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      0,
+    );
 
     let query = "SELECT * FROM certificate_logs WHERE 1=1";
     const params = [];
     let paramCount = 1;
 
     // Filter by certificate_id
-    if (certificate_id && certificate_id.trim()) {
+    if (certificateId && certificateId.trim()) {
       query += ` AND certificate_id = $${paramCount}`;
-      params.push(certificate_id.trim());
+      params.push(certificateId.trim());
       paramCount++;
     }
 
     // Filter by action_type
-    if (action_type && action_type.trim()) {
+    if (actionType && actionType.trim()) {
       query += ` AND action_type = $${paramCount}`;
-      params.push(action_type.trim().toUpperCase());
+      params.push(actionType.trim().toUpperCase());
       paramCount++;
     }
 
     // Filter by date range
-    if (from_date && from_date.trim()) {
+    if (fromDate && fromDate.trim()) {
       query += ` AND created_at >= $${paramCount}`;
-      params.push(from_date.trim());
+      params.push(fromDate.trim());
       paramCount++;
     }
 
-    // FIX #7: Simplified date filter - use < next day instead of <= end of day
-    if (to_date && to_date.trim()) {
+    if (toDate && toDate.trim()) {
       query += ` AND created_at < $${paramCount}::date + interval '1 day'`;
-      params.push(to_date.trim());
+      params.push(toDate.trim());
       paramCount++;
     }
 
@@ -125,8 +166,8 @@ const getLogs = async (req, res) => {
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(validatedLimit, validatedOffset);
 
-    console.log("📝 Query:", query);
-    console.log("📝 Params:", params);
+    logger.debug("Query:", query);
+    logger.debug("Params:", params);
 
     const result = await pool.query(query, params);
 
@@ -135,27 +176,27 @@ const getLogs = async (req, res) => {
     const countParams = [];
     let countParamNum = 1;
 
-    if (certificate_id && certificate_id.trim()) {
+    if (certificateId && certificateId.trim()) {
       countQuery += ` AND certificate_id = $${countParamNum}`;
-      countParams.push(certificate_id.trim());
+      countParams.push(certificateId.trim());
       countParamNum++;
     }
 
-    if (action_type && action_type.trim()) {
+    if (actionType && actionType.trim()) {
       countQuery += ` AND action_type = $${countParamNum}`;
-      countParams.push(action_type.trim().toUpperCase());
+      countParams.push(actionType.trim().toUpperCase());
       countParamNum++;
     }
 
-    if (from_date && from_date.trim()) {
+    if (fromDate && fromDate.trim()) {
       countQuery += ` AND created_at >= $${countParamNum}`;
-      countParams.push(from_date.trim());
+      countParams.push(fromDate.trim());
       countParamNum++;
     }
 
-    if (to_date && to_date.trim()) {
+    if (toDate && toDate.trim()) {
       countQuery += ` AND created_at < $${countParamNum}::date + interval '1 day'`;
-      countParams.push(to_date.trim());
+      countParams.push(toDate.trim());
       countParamNum++;
     }
 
@@ -181,11 +222,12 @@ const getLogs = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get logs error:", error);
-    res.status(500).json({
+    logger.error("Get logs error:", error);
+    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -196,13 +238,17 @@ const getLogsByCertificate = async (req, res) => {
     const { id } = req.params;
 
     if (!id || !id.trim()) {
-      return res.status(400).json({
+      return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Certificate ID is required",
+        errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       });
     }
 
-    const result = await pool.query("SELECT * FROM certificate_logs WHERE certificate_id = $1 ORDER BY created_at DESC", [id.trim()]);
+    const result = await pool.query(
+      "SELECT * FROM certificate_logs WHERE certificate_id = $1 ORDER BY created_at DESC",
+      [id.trim()],
+    );
 
     res.json({
       success: true,
@@ -210,11 +256,12 @@ const getLogsByCertificate = async (req, res) => {
       count: result.rows.length,
     });
   } catch (error) {
-    console.error("Get certificate logs error:", error);
-    res.status(500).json({
+    logger.error("Get certificate logs error:", error);
+    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -234,29 +281,37 @@ const deleteOldLogs = async (req, res) => {
       [validatedDays],
     );
 
+    logger.info(
+      `Deleted ${result.rows.length} log entries older than ${validatedDays} days`,
+    );
+
     res.json({
       success: true,
       message: `Deleted ${result.rows.length} log entries older than ${validatedDays} days`,
       deletedCount: result.rows.length,
     });
   } catch (error) {
-    console.error("Delete old logs error:", error);
-    res.status(500).json({
+    logger.error("Delete old logs error:", error);
+    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
 
 // =====================================================
-// NEW: Utility function to recover failed logs from backup file
+// RECOVER FAILED LOGS FROM BACKUP FILE
 // =====================================================
 const recoverFailedLogs = async (req, res) => {
   try {
     const logFile = path.join(__dirname, "..", "logs", "failed-logs.jsonl");
 
-    if (!fs.existsSync(logFile)) {
+    // Check if file exists
+    try {
+      await fs.access(logFile);
+    } catch {
       return res.json({
         success: true,
         message: "No failed logs to recover",
@@ -264,7 +319,7 @@ const recoverFailedLogs = async (req, res) => {
       });
     }
 
-    const fileContent = fs.readFileSync(logFile, "utf-8");
+    const fileContent = await fs.readFile(logFile, "utf-8");
     const lines = fileContent.split("\n").filter((line) => line.trim());
 
     let recovered = 0;
@@ -281,22 +336,22 @@ const recoverFailedLogs = async (req, res) => {
             certificate_amount, medal_amount, old_values, new_values, performed_by)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
-            logData.certificate_id,
-            logData.action_type,
+            logData.certificateId,
+            logData.actionType,
             logData.description,
-            logData.from_branch,
-            logData.to_branch,
-            logData.certificate_amount,
-            logData.medal_amount,
-            logData.old_values ? JSON.stringify(logData.old_values) : null,
-            logData.new_values ? JSON.stringify(logData.new_values) : null,
-            logData.performed_by,
+            logData.fromBranch,
+            logData.toBranch,
+            logData.certificateAmount,
+            logData.medalAmount,
+            logData.oldValues ? JSON.stringify(logData.oldValues) : null,
+            logData.newValues ? JSON.stringify(logData.newValues) : null,
+            logData.performedBy,
           ],
         );
 
         recovered++;
       } catch (err) {
-        console.error("Failed to recover log:", err);
+        logger.error("Failed to recover log:", err);
         failed++;
       }
     }
@@ -304,9 +359,19 @@ const recoverFailedLogs = async (req, res) => {
     // Rename the file to mark it as processed
     if (recovered > 0) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const backupFile = path.join(__dirname, "..", "logs", `recovered-${timestamp}.jsonl`);
-      fs.renameSync(logFile, backupFile);
+      const backupFile = path.join(
+        __dirname,
+        "..",
+        "logs",
+        `recovered-${timestamp}.jsonl`,
+      );
+      await fs.rename(logFile, backupFile);
+      logger.info(`Recovered logs backed up to: ${backupFile}`);
     }
+
+    logger.info(
+      `Recovery complete. Recovered: ${recovered}, Failed: ${failed}`,
+    );
 
     res.json({
       success: true,
@@ -315,11 +380,12 @@ const recoverFailedLogs = async (req, res) => {
       failed,
     });
   } catch (error) {
-    console.error("Recover failed logs error:", error);
-    res.status(500).json({
+    logger.error("Recover failed logs error:", error);
+    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -329,5 +395,5 @@ module.exports = {
   getLogs,
   getLogsByCertificate,
   deleteOldLogs,
-  recoverFailedLogs, // NEW
+  recoverFailedLogs,
 };

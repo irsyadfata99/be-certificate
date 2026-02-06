@@ -1,6 +1,9 @@
 const pool = require("../config/database");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const logger = require("../utils/logger");
+const CONSTANTS = require("../utils/constants");
+const validators = require("../utils/validators");
 
 // Login
 const login = async (req, res) => {
@@ -9,21 +12,36 @@ const login = async (req, res) => {
 
     // Validasi input
     if (!username || !password) {
-      return res.status(400).json({
+      return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Username and password are required",
+        errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       });
     }
 
+    // Sanitize and validate username
+    const usernameValidation = validators.validateUsername(username);
+    if (!usernameValidation.valid) {
+      return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: usernameValidation.error,
+        errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      });
+    }
+
+    const cleanUsername = usernameValidation.value;
+
     // Cari user di database
     const result = await pool.query("SELECT * FROM users WHERE username = $1", [
-      username,
+      cleanUsername,
     ]);
 
     if (result.rows.length === 0) {
-      return res.status(401).json({
+      logger.warn(`Failed login attempt for username: ${cleanUsername}`);
+      return res.status(CONSTANTS.HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Invalid credentials",
+        errorCode: CONSTANTS.ERROR_CODES.INVALID_CREDENTIALS,
       });
     }
 
@@ -33,9 +51,11 @@ const login = async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
-      return res.status(401).json({
+      logger.warn(`Failed password attempt for user: ${cleanUsername}`);
+      return res.status(CONSTANTS.HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Invalid credentials",
+        errorCode: CONSTANTS.ERROR_CODES.INVALID_CREDENTIALS,
       });
     }
 
@@ -44,10 +64,13 @@ const login = async (req, res) => {
       {
         id: user.id,
         username: user.username,
-        role: user.role, // NEW: Include role in token
+        role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" },
+      {
+        expiresIn: CONSTANTS.JWT.EXPIRES_IN,
+        algorithm: CONSTANTS.JWT.ALGORITHM,
+      },
     );
 
     // Prepare user data for response
@@ -59,10 +82,12 @@ const login = async (req, res) => {
 
     // Include teacher-specific data if user is teacher
     if (user.role === "teacher") {
-      userData.teacher_name = user.teacher_name;
-      userData.teacher_division = user.teacher_division;
-      userData.teacher_branch = user.teacher_branch;
+      userData.teacherName = user.teacher_name;
+      userData.teacherDivision = user.teacher_division;
+      userData.teacherBranch = user.teacher_branch;
     }
+
+    logger.info(`Successful login: ${cleanUsername} (${user.role})`);
 
     res.json({
       success: true,
@@ -71,10 +96,11 @@ const login = async (req, res) => {
       user: userData,
     });
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
+    logger.error("Login error:", error);
+    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
       success: false,
       message: "Server error",
+      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
     });
   }
 };

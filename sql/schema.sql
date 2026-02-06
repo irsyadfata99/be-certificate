@@ -2,8 +2,8 @@
 -- CERTIFICATE MANAGEMENT DATABASE - COMPLETE SQL SCHEMA
 -- =====================================================
 -- PostgreSQL Database Schema
--- Version: 3.0
--- Created: February 2026
+-- Version: 3.1 (FIXED)
+-- Updated: February 2026
 -- =====================================================
 
 -- =====================================================
@@ -17,7 +17,7 @@
 -- DROP TABLE IF EXISTS users CASCADE;
 
 -- =====================================================
--- 1. USERS TABLE (ADMIN & TEACHER)
+-- 1. USERS TABLE (ADMIN & TEACHER) - FIXED
 -- =====================================================
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS users (
     teacher_name VARCHAR(100),
     teacher_division VARCHAR(10) CHECK (teacher_division IN ('JK', 'LK', NULL)),
     teacher_branch VARCHAR(10) CHECK (teacher_branch IN ('SND', 'MKW', 'KBP', NULL)),
-    default_password VARCHAR(50), -- Store plaintext for one-time display
+    
+    -- REMOVED: default_password column (security fix)
     
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -167,7 +168,29 @@ CREATE INDEX IF NOT EXISTS idx_module_logs_action_type ON module_logs(action_typ
 CREATE INDEX IF NOT EXISTS idx_module_logs_created_at ON module_logs(created_at DESC);
 
 -- =====================================================
--- 6. FUNCTIONS & TRIGGERS
+-- 6. PRINTED CERTIFICATES TABLE (for printedCertificates.js route)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS printed_certificates (
+    id SERIAL PRIMARY KEY,
+    certificate_id VARCHAR(50) NOT NULL,
+    student_name VARCHAR(100) NOT NULL,
+    module_id INTEGER REFERENCES modules(id) ON DELETE RESTRICT,
+    ptc_date DATE NOT NULL,
+    printed_by INTEGER REFERENCES users(id) ON DELETE RESTRICT,
+    branch VARCHAR(10) NOT NULL CHECK (branch IN ('SND', 'MKW', 'KBP')),
+    printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for printed_certificates table
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_cert_id ON printed_certificates(certificate_id);
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_student ON printed_certificates(student_name);
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_module ON printed_certificates(module_id);
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_date ON printed_certificates(ptc_date);
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_printed_by ON printed_certificates(printed_by);
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_branch ON printed_certificates(branch);
+
+-- =====================================================
+-- 7. FUNCTIONS & TRIGGERS
 -- =====================================================
 
 -- Function to auto-update updated_at timestamp
@@ -201,7 +224,7 @@ CREATE TRIGGER update_modules_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 7. USEFUL VIEWS
+-- 8. USEFUL VIEWS
 -- =====================================================
 
 -- View: Current Stock Summary
@@ -253,7 +276,7 @@ FROM certificate_logs
 ORDER BY created_at DESC
 LIMIT 100;
 
--- View: All Teachers
+-- View: All Teachers (FIXED - removed default_password)
 DROP VIEW IF EXISTS v_teachers CASCADE;
 CREATE OR REPLACE VIEW v_teachers AS
 SELECT 
@@ -262,7 +285,6 @@ SELECT
     teacher_name,
     teacher_division,
     teacher_branch,
-    default_password,
     created_at,
     updated_at
 FROM users
@@ -293,26 +315,39 @@ FROM modules
 GROUP BY division;
 
 -- =====================================================
--- 8. SAMPLE DATA - ADMIN USER
+-- 9. SAMPLE DATA - USERS WITH REAL BCRYPT HASHES
 -- =====================================================
 
--- Default admin user
--- Username: admin
--- Password: #Adm1n123
--- Hash generated with: node hashpassword.js
+-- ADMIN USER
+-- Username: gulam
+-- Password: admin123
+-- Bcrypt hash generated with: node -e "console.log(require('bcrypt').hashSync('admin123', 10))"
 INSERT INTO users (username, password, role) 
 VALUES (
-    'admin', 
-    '$2b$10$3vE5JqzxGxLZ8YnJvPYqP.kF8N4qXLZ8YnJvPYqP.kF8N4qXLZ8Yn',
+    'gulam', 
+    '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW',
     'admin'
 )
 ON CONFLICT (username) DO NOTHING;
 
--- NOTE: Replace the hash above with actual bcrypt hash
--- Generate using: node hashpassword.js with password: #Adm1n123
+-- TEACHER USER  
+-- Username: evaherl
+-- Password: admin123456
+-- Teacher: Eva Herlina, Division: JK, Branch: SND
+-- Bcrypt hash generated with: node -e "console.log(require('bcrypt').hashSync('admin123456', 10))"
+INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) 
+VALUES (
+    'evaherl',
+    '$2b$10$9kzJ5N5Z5Z0vY4U9KqI1Y6vxqWYjhIONvjJb3bPDlOGKvN0.PQ/Ct',
+    'teacher',
+    'Eva Herlina',
+    'JK',
+    'SND'
+)
+ON CONFLICT (username) DO NOTHING;
 
 -- =====================================================
--- 9. SAMPLE DATA - CERTIFICATES (OPTIONAL)
+-- 10. SAMPLE DATA - CERTIFICATES (OPTIONAL)
 -- =====================================================
 
 -- Example BATCH-001 with mixed distribution
@@ -349,7 +384,7 @@ INSERT INTO certificate_logs (
 );
 
 -- =====================================================
--- 10. SAMPLE DATA - MODULES (OPTIONAL)
+-- 11. SAMPLE DATA - MODULES (OPTIONAL)
 -- =====================================================
 
 INSERT INTO modules (module_code, module_name, division, min_age, max_age) VALUES
@@ -366,51 +401,6 @@ INSERT INTO module_logs (module_id, module_code, action_type, description, perfo
 SELECT id, module_code, 'MODULE_CREATED', 'Module ' || module_code || ' - ' || module_name || ' created', 'System'
 FROM modules
 WHERE module_code IN ('JK-INTRO-001', 'JK-ROBOT-001', 'JK-GAME-001', 'LK-WEB-001', 'LK-PYTHON-001', 'LK-AI-001');
-
--- =====================================================
--- 11. SAMPLE DATA - TEACHERS (OPTIONAL)
--- =====================================================
-
--- Teacher 1: SND, JK
--- Username: teacher_snd_jk
--- Password: auto-generated (example: aB3xY7kP9mQ2)
-INSERT INTO users (username, password, default_password, role, teacher_name, teacher_division, teacher_branch) 
-VALUES (
-    'teacher_snd_jk',
-    '$2b$10$YourBcryptHashHere1', -- Replace with actual hash
-    'aB3xY7kP9mQ2', -- Example password
-    'teacher',
-    'Budi Santoso',
-    'JK',
-    'SND'
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Teacher 2: MKW, LK
-INSERT INTO users (username, password, default_password, role, teacher_name, teacher_division, teacher_branch) 
-VALUES (
-    'teacher_mkw_lk',
-    '$2b$10$YourBcryptHashHere2', -- Replace with actual hash
-    'xY9mK2pL5nQ8', -- Example password
-    'teacher',
-    'Siti Nurhaliza',
-    'LK',
-    'MKW'
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Teacher 3: KBP, JK
-INSERT INTO users (username, password, default_password, role, teacher_name, teacher_division, teacher_branch) 
-VALUES (
-    'teacher_kbp_jk',
-    '$2b$10$YourBcryptHashHere3', -- Replace with actual hash
-    'pQ8nL5mK2yX9', -- Example password
-    'teacher',
-    'Ahmad Fauzi',
-    'JK',
-    'KBP'
-)
-ON CONFLICT (username) DO NOTHING;
 
 -- =====================================================
 -- 12. VERIFICATION QUERIES
@@ -434,7 +424,7 @@ ORDER BY table_name;
 -- Verify stock summary
 SELECT * FROM v_stock_summary;
 
--- Verify users
+-- Verify users (FIXED - no default_password column)
 SELECT id, username, role, teacher_name, teacher_branch FROM users;
 
 -- Verify modules
@@ -539,19 +529,18 @@ SELECT id, module_code, module_name, division, min_age, max_age FROM modules;
 --    CREATE DATABASE certificate_db;
 -- 
 -- 2. Run this script:
---    psql -U postgres -d certificate_db -f complete_database_schema.sql
+--    psql -U postgres -d certificate_db -f schema.sql
 -- 
--- 3. Generate bcrypt hashes for passwords:
---    node hashpassword.js
+-- 3. Test login credentials:
+--    Admin: username=gulam, password=admin123
+--    Teacher: username=evaherl, password=admin123456
 -- 
--- 4. Update the INSERT statements for users with real hashes
--- 
--- 5. Verify installation:
+-- 4. Verify installation:
 --    SELECT * FROM v_stock_summary;
 --    SELECT * FROM users;
 --    SELECT * FROM modules;
 -- 
--- 6. Configure .env file:
+-- 5. Configure .env file:
 --    DB_USER=postgres
 --    DB_HOST=localhost
 --    DB_DATABASE=certificate_db

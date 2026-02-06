@@ -1,18 +1,22 @@
-// Teacher Controller
+// Teacher Controller - FIXED VERSION
 // Handles CRUD operations for teachers
 
 const pool = require("../config/database");
 const bcrypt = require("bcrypt");
 const { generatePassword } = require("../utils/passwordGenerator");
+const logger = require("../utils/logger");
+const CONSTANTS = require("../utils/constants");
+const validators = require("../utils/validators");
 
 // =====================================================
 // HELPER FUNCTIONS
 // =====================================================
 
-function sendError(res, statusCode, message, error = null) {
+function sendError(res, statusCode, message, errorCode = null, error = null) {
   const response = {
     success: false,
     message: message,
+    errorCode: errorCode,
   };
 
   if (error && process.env.NODE_ENV === "development") {
@@ -20,7 +24,7 @@ function sendError(res, statusCode, message, error = null) {
     response.stack = error.stack;
   }
 
-  console.error(`❌ Error (${statusCode}):`, message, error || "");
+  logger.error(`Error (${statusCode}): ${message}`, error || "");
   return res.status(statusCode).json(response);
 }
 
@@ -36,85 +40,6 @@ function sendSuccess(res, message, data = null, meta = null) {
   return res.json(response);
 }
 
-// Validation helpers
-function validateTeacherName(name) {
-  if (!name || !name.trim()) {
-    return { valid: false, error: "Teacher name is required" };
-  }
-
-  const cleanName = name.trim();
-
-  if (cleanName.length < 3) {
-    return {
-      valid: false,
-      error: "Teacher name must be at least 3 characters",
-    };
-  }
-
-  if (cleanName.length > 100) {
-    return {
-      valid: false,
-      error: "Teacher name must not exceed 100 characters",
-    };
-  }
-
-  return { valid: true, value: cleanName };
-}
-
-function validateUsername(username) {
-  if (!username || !username.trim()) {
-    return { valid: false, error: "Username is required" };
-  }
-
-  const cleanUsername = username.trim();
-
-  if (cleanUsername.length < 3) {
-    return { valid: false, error: "Username must be at least 3 characters" };
-  }
-
-  if (cleanUsername.length > 50) {
-    return { valid: false, error: "Username must not exceed 50 characters" };
-  }
-
-  const validFormat = /^[A-Za-z0-9_]+$/;
-  if (!validFormat.test(cleanUsername)) {
-    return {
-      valid: false,
-      error: "Username can only contain letters, numbers, and underscores",
-    };
-  }
-
-  return { valid: true, value: cleanUsername };
-}
-
-function validateDivision(division) {
-  if (!division || !division.trim()) {
-    return { valid: false, error: "Teacher division is required" };
-  }
-
-  const cleanDivision = division.trim().toUpperCase();
-
-  if (!["JK", "LK"].includes(cleanDivision)) {
-    return { valid: false, error: "Division must be either JK or LK" };
-  }
-
-  return { valid: true, value: cleanDivision };
-}
-
-function validateBranch(branch) {
-  if (!branch || !branch.trim()) {
-    return { valid: false, error: "Teacher branch is required" };
-  }
-
-  const cleanBranch = branch.trim().toUpperCase();
-
-  if (!["SND", "MKW", "KBP"].includes(cleanBranch)) {
-    return { valid: false, error: "Branch must be SND, MKW, or KBP" };
-  }
-
-  return { valid: true, value: cleanBranch };
-}
-
 // =====================================================
 // 1. CREATE TEACHER
 // =====================================================
@@ -123,38 +48,65 @@ const createTeacher = async (req, res) => {
 
   try {
     await client.query("BEGIN");
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
-    console.log("📥 Create teacher request:", req.body);
+    logger.info("Create teacher request:", req.body);
 
-    const { teacher_name, teacher_division, teacher_branch, username } =
-      req.body;
+    const {
+      teacher_name: teacherName,
+      teacher_division: teacherDivision,
+      teacher_branch: teacherBranch,
+      username,
+    } = req.body;
 
     // Validate teacher_name
-    const nameValidation = validateTeacherName(teacher_name);
+    const nameValidation = validators.validateTeacherName(teacherName);
     if (!nameValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, nameValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        nameValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate username
-    const usernameValidation = validateUsername(username);
+    const usernameValidation = validators.validateUsername(username);
     if (!usernameValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, usernameValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        usernameValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate division
-    const divisionValidation = validateDivision(teacher_division);
+    const divisionValidation = validators.validateDivision(teacherDivision);
     if (!divisionValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, divisionValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        divisionValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate branch
-    const branchValidation = validateBranch(teacher_branch);
+    const branchValidation = validators.validateBranch(teacherBranch);
     if (!branchValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, branchValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        branchValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const cleanName = nameValidation.value;
@@ -170,26 +122,35 @@ const createTeacher = async (req, res) => {
 
     if (checkExisting.rows.length > 0) {
       await client.query("ROLLBACK");
-      return sendError(res, 409, "Username already exists");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.CONFLICT,
+        "Username already exists",
+        CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY,
+      );
     }
 
     // Generate random password
-    const generatedPassword = generatePassword(12);
-    console.log("🔑 Generated password:", generatedPassword);
+    const generatedPassword = generatePassword(
+      CONSTANTS.PASSWORD.DEFAULT_GENERATED_LENGTH,
+    );
+    logger.info("Generated password for new teacher");
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+    const hashedPassword = await bcrypt.hash(
+      generatedPassword,
+      CONSTANTS.PASSWORD.BCRYPT_ROUNDS,
+    );
 
-    // Insert teacher
+    // FIXED: Insert teacher WITHOUT default_password column
     const result = await client.query(
       `INSERT INTO users 
-       (username, password, default_password, role, teacher_name, teacher_division, teacher_branch) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING id, username, teacher_name, teacher_division, teacher_branch, default_password, created_at`,
+       (username, password, role, teacher_name, teacher_division, teacher_branch) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, username, teacher_name, teacher_division, teacher_branch, created_at`,
       [
         cleanUsername,
         hashedPassword,
-        generatedPassword, // Store plaintext for one-time display
         "teacher",
         cleanName,
         cleanDivision,
@@ -199,12 +160,24 @@ const createTeacher = async (req, res) => {
 
     await client.query("COMMIT");
 
-    console.log("✅ Teacher created:", result.rows[0]);
+    logger.info("Teacher created:", result.rows[0]);
 
-    return sendSuccess(res, "Teacher created successfully", result.rows[0]);
+    // FIXED: Return password ONLY in response (one-time display)
+    const responseData = {
+      ...result.rows[0],
+      generatedPassword: generatedPassword, // Only in API response, NOT stored in DB
+    };
+
+    return sendSuccess(res, "Teacher created successfully", responseData);
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, 500, "Failed to create teacher", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to create teacher",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -215,20 +188,32 @@ const createTeacher = async (req, res) => {
 // =====================================================
 const getAllTeachers = async (req, res) => {
   try {
-    const { limit = 5, offset = 0 } = req.query;
+    const {
+      limit = CONSTANTS.PAGINATION.CERTIFICATES_DEFAULT_LIMIT,
+      offset = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+    } = req.query;
 
-    const validatedLimit = Math.min(Math.max(parseInt(limit) || 5, 1), 100);
-    const validatedOffset = Math.max(parseInt(offset) || 0, 0);
-
-    console.log(
-      `📥 Get teachers: limit=${validatedLimit}, offset=${validatedOffset}`,
+    const validatedLimit = Math.min(
+      Math.max(
+        parseInt(limit) || CONSTANTS.PAGINATION.CERTIFICATES_DEFAULT_LIMIT,
+        1,
+      ),
+      CONSTANTS.PAGINATION.MAX_LIMIT,
+    );
+    const validatedOffset = Math.max(
+      parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      0,
     );
 
-    // Get paginated teachers
+    logger.info(
+      `Get teachers: limit=${validatedLimit}, offset=${validatedOffset}`,
+    );
+
+    // FIXED: Remove default_password from SELECT
     const query = `
       SELECT 
         id, username, teacher_name, teacher_division, teacher_branch, 
-        default_password, created_at, updated_at
+        created_at, updated_at
       FROM users
       WHERE role = 'teacher'
       ORDER BY created_at DESC
@@ -252,14 +237,20 @@ const getAllTeachers = async (req, res) => {
       totalPages: Math.ceil(totalCount / validatedLimit),
     };
 
-    console.log(`✅ Returned ${result.rows.length}/${totalCount} teachers`);
+    logger.info(`Returned ${result.rows.length}/${totalCount} teachers`);
 
     return sendSuccess(res, "Teachers retrieved successfully", result.rows, {
       pagination,
       count: result.rows.length,
     });
   } catch (error) {
-    return sendError(res, 500, "Failed to retrieve teachers", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve teachers",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -272,25 +263,42 @@ const getTeacherById = async (req, res) => {
 
     const teacherId = parseInt(id);
     if (isNaN(teacherId)) {
-      return sendError(res, 400, "Invalid teacher ID");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid teacher ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
+    // FIXED: Remove default_password from SELECT
     const result = await pool.query(
       `SELECT 
         id, username, teacher_name, teacher_division, teacher_branch, 
-        default_password, created_at, updated_at
+        created_at, updated_at
       FROM users 
       WHERE id = $1 AND role = 'teacher'`,
       [teacherId],
     );
 
     if (result.rows.length === 0) {
-      return sendError(res, 404, "Teacher not found");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Teacher not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     return sendSuccess(res, "Teacher retrieved successfully", result.rows[0]);
   } catch (error) {
-    return sendError(res, 500, "Failed to retrieve teacher", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve teacher",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -302,23 +310,31 @@ const updateTeacher = async (req, res) => {
 
   try {
     await client.query("BEGIN");
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
     const { id } = req.params;
     const {
-      teacher_name,
-      teacher_division,
-      teacher_branch,
+      teacher_name: teacherName,
+      teacher_division: teacherDivision,
+      teacher_branch: teacherBranch,
       username,
-      new_password,
+      new_password: newPassword,
     } = req.body;
 
     const teacherId = parseInt(id);
     if (isNaN(teacherId)) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, "Invalid teacher ID");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid teacher ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    console.log("📝 Update teacher request:", { id: teacherId, ...req.body });
+    logger.info("Update teacher request:", { id: teacherId, ...req.body });
 
     // Check if teacher exists
     const checkTeacher = await client.query(
@@ -328,28 +344,43 @@ const updateTeacher = async (req, res) => {
 
     if (checkTeacher.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, 404, "Teacher not found");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Teacher not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     const currentTeacher = checkTeacher.rows[0];
 
     // Validate fields if provided
     let cleanName = currentTeacher.teacher_name;
-    if (teacher_name !== undefined) {
-      const nameValidation = validateTeacherName(teacher_name);
+    if (teacherName !== undefined) {
+      const nameValidation = validators.validateTeacherName(teacherName);
       if (!nameValidation.valid) {
         await client.query("ROLLBACK");
-        return sendError(res, 400, nameValidation.error);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          nameValidation.error,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
       cleanName = nameValidation.value;
     }
 
     let cleanUsername = currentTeacher.username;
     if (username !== undefined) {
-      const usernameValidation = validateUsername(username);
+      const usernameValidation = validators.validateUsername(username);
       if (!usernameValidation.valid) {
         await client.query("ROLLBACK");
-        return sendError(res, 400, usernameValidation.error);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          usernameValidation.error,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
       cleanUsername = usernameValidation.value;
 
@@ -362,45 +393,67 @@ const updateTeacher = async (req, res) => {
 
         if (checkExisting.rows.length > 0) {
           await client.query("ROLLBACK");
-          return sendError(res, 409, "Username already exists");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.CONFLICT,
+            "Username already exists",
+            CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY,
+          );
         }
       }
     }
 
     let cleanDivision = currentTeacher.teacher_division;
-    if (teacher_division !== undefined) {
-      const divisionValidation = validateDivision(teacher_division);
+    if (teacherDivision !== undefined) {
+      const divisionValidation = validators.validateDivision(teacherDivision);
       if (!divisionValidation.valid) {
         await client.query("ROLLBACK");
-        return sendError(res, 400, divisionValidation.error);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          divisionValidation.error,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
       cleanDivision = divisionValidation.value;
     }
 
     let cleanBranch = currentTeacher.teacher_branch;
-    if (teacher_branch !== undefined) {
-      const branchValidation = validateBranch(teacher_branch);
+    if (teacherBranch !== undefined) {
+      const branchValidation = validators.validateBranch(teacherBranch);
       if (!branchValidation.valid) {
         await client.query("ROLLBACK");
-        return sendError(res, 400, branchValidation.error);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          branchValidation.error,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
       cleanBranch = branchValidation.value;
     }
 
     // Handle password update
     let hashedPassword = currentTeacher.password;
-    let newDefaultPassword = currentTeacher.default_password;
 
-    if (new_password && new_password.trim()) {
-      if (new_password.length < 8) {
+    if (newPassword && newPassword.trim()) {
+      const passwordValidation = validators.validatePassword(newPassword);
+      if (!passwordValidation.valid) {
         await client.query("ROLLBACK");
-        return sendError(res, 400, "Password must be at least 8 characters");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          passwordValidation.error,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
-      hashedPassword = await bcrypt.hash(new_password, 10);
-      newDefaultPassword = new_password; // Update default password if manually changed
+      hashedPassword = await bcrypt.hash(
+        newPassword,
+        CONSTANTS.PASSWORD.BCRYPT_ROUNDS,
+      );
     }
 
-    // Update teacher
+    // FIXED: Update teacher WITHOUT default_password column
     const result = await client.query(
       `UPDATE users 
        SET username = $1, 
@@ -408,29 +461,33 @@ const updateTeacher = async (req, res) => {
            teacher_division = $3, 
            teacher_branch = $4,
            password = $5,
-           default_password = $6,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
-       RETURNING id, username, teacher_name, teacher_division, teacher_branch, default_password, created_at, updated_at`,
+       WHERE id = $6
+       RETURNING id, username, teacher_name, teacher_division, teacher_branch, created_at, updated_at`,
       [
         cleanUsername,
         cleanName,
         cleanDivision,
         cleanBranch,
         hashedPassword,
-        newDefaultPassword,
         teacherId,
       ],
     );
 
     await client.query("COMMIT");
 
-    console.log("✅ Teacher updated:", result.rows[0]);
+    logger.info("Teacher updated:", result.rows[0]);
 
     return sendSuccess(res, "Teacher updated successfully", result.rows[0]);
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, 500, "Failed to update teacher", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to update teacher",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -444,16 +501,24 @@ const deleteTeacher = async (req, res) => {
 
   try {
     await client.query("BEGIN");
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
     const { id } = req.params;
 
     const teacherId = parseInt(id);
     if (isNaN(teacherId)) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, "Invalid teacher ID");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid teacher ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    console.log("🗑️ Delete teacher request:", teacherId);
+    logger.info("Delete teacher request:", teacherId);
 
     // Check if teacher exists
     const checkTeacher = await client.query(
@@ -463,7 +528,12 @@ const deleteTeacher = async (req, res) => {
 
     if (checkTeacher.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, 404, "Teacher not found");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Teacher not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     const teacher = checkTeacher.rows[0];
@@ -473,7 +543,7 @@ const deleteTeacher = async (req, res) => {
 
     await client.query("COMMIT");
 
-    console.log("✅ Teacher deleted:", teacher.username);
+    logger.info("Teacher deleted:", teacher.username);
 
     return sendSuccess(res, "Teacher deleted successfully", {
       id: teacher.id,
@@ -482,7 +552,13 @@ const deleteTeacher = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, 500, "Failed to delete teacher", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to delete teacher",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
