@@ -1,4 +1,4 @@
-// Teacher Routes
+// routes/teacherRoutes.js
 // Handles all teacher-related endpoints (admin only)
 
 const express = require("express");
@@ -12,13 +12,17 @@ const {
 } = require("../controllers/TeacherController");
 const { verifyToken, requireAdmin } = require("../auth/AuthMiddleware");
 
-console.log("✅ Teacher routes loaded");
-
-// All teacher routes require authentication AND admin role
+// =====================================================
+// ALL ROUTES REQUIRE AUTHENTICATION AND ADMIN ROLE
+// =====================================================
 router.use(verifyToken);
 router.use(requireAdmin);
 
-// Create new teacher
+// =====================================================
+// TEACHER CRUD OPERATIONS
+// =====================================================
+
+// Create new teacher (generates random password)
 router.post("/", createTeacher);
 
 // Get all teachers (with pagination)
@@ -27,7 +31,7 @@ router.get("/", getAllTeachers);
 // Get specific teacher by ID
 router.get("/:id", getTeacherById);
 
-// Update teacher
+// Update teacher (can update all fields including password)
 router.put("/:id", updateTeacher);
 
 // Delete teacher

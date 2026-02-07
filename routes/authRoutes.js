@@ -1,11 +1,21 @@
+// routes/authRoutes.js
 const express = require("express");
 const router = express.Router();
 const { login } = require("../auth/AuthController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
+// =====================================================
+// PUBLIC ROUTES
+// =====================================================
+
+// Login endpoint
 router.post("/login", login);
 
-// Protected route example - INI YANG DIPANGGIL DI FRONTEND
+// =====================================================
+// PROTECTED ROUTES
+// =====================================================
+
+// Get current user profile (used by frontend to verify token)
 router.get("/profile", verifyToken, (req, res) => {
   res.json({
     success: true,

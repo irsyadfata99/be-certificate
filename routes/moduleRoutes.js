@@ -1,4 +1,4 @@
-// Module Routes
+// routes/moduleRoutes.js
 // Handles all module-related endpoints (admin only)
 
 const express = require("express");
@@ -9,19 +9,31 @@ const {
   getModuleById,
   updateModule,
   deleteModule,
+  getModuleStats,
 } = require("../controllers/ModuleController");
 const { verifyToken, requireAdmin } = require("../auth/AuthMiddleware");
 
-console.log("✅ Module routes loaded");
-
-// All module routes require authentication AND admin role
+// =====================================================
+// ALL ROUTES REQUIRE AUTHENTICATION AND ADMIN ROLE
+// =====================================================
 router.use(verifyToken);
 router.use(requireAdmin);
+
+// =====================================================
+// MODULE STATISTICS
+// =====================================================
+
+// Get module statistics (total, by division, age ranges)
+router.get("/stats", getModuleStats);
+
+// =====================================================
+// MODULE CRUD OPERATIONS
+// =====================================================
 
 // Create new module
 router.post("/", createModule);
 
-// Get all modules (with pagination)
+// Get all modules (with pagination and filters)
 router.get("/", getAllModules);
 
 // Get specific module by ID

@@ -1,13 +1,18 @@
+// controllers/CertificateController.js - FIXED VERSION
 const pool = require("../config/database");
 const { logAction } = require("./CertificateLogsController");
+const logger = require("../utils/logger");
+const CONSTANTS = require("../utils/constants");
+const validators = require("../utils/validators");
 
 // =====================================================
 // STANDARDIZED ERROR RESPONSE HELPER
 // =====================================================
-function sendError(res, statusCode, message, error = null) {
+function sendError(res, statusCode, message, errorCode = null, error = null) {
   const response = {
     success: false,
     message: message,
+    errorCode: errorCode,
   };
 
   if (error && process.env.NODE_ENV === "development") {
@@ -15,7 +20,7 @@ function sendError(res, statusCode, message, error = null) {
     response.stack = error.stack;
   }
 
-  console.error(`❌ Error (${statusCode}):`, message, error || "");
+  logger.error(`Error (${statusCode}): ${message}`, error || "");
   return res.status(statusCode).json(response);
 }
 
@@ -32,82 +37,31 @@ function sendSuccess(res, message, data = null, meta = null) {
 }
 
 // =====================================================
-// VALIDATION HELPERS
-// =====================================================
-function validatePositiveInteger(value, fieldName, maxValue = 2147483647) {
-  const num = parseInt(value);
-  if (isNaN(num)) {
-    return { valid: false, error: `${fieldName} must be a number` };
-  }
-  if (num < 0) {
-    return { valid: false, error: `${fieldName} cannot be negative` };
-  }
-  if (!Number.isInteger(num)) {
-    return { valid: false, error: `${fieldName} must be an integer` };
-  }
-  if (num > maxValue) {
-    return {
-      valid: false,
-      error: `${fieldName} exceeds maximum value of ${maxValue}`,
-    };
-  }
-  return { valid: true, value: num };
-}
-
-function validateCertificateId(certificate_id) {
-  if (!certificate_id || !certificate_id.trim()) {
-    return { valid: false, error: "Certificate ID is required" };
-  }
-
-  const cleanId = certificate_id.trim();
-
-  if (cleanId.length < 3) {
-    return {
-      valid: false,
-      error: "Certificate ID must be at least 3 characters",
-    };
-  }
-
-  if (cleanId.length > 50) {
-    return {
-      valid: false,
-      error: "Certificate ID must not exceed 50 characters",
-    };
-  }
-
-  const validFormat = /^[A-Za-z0-9_-]+$/;
-  if (!validFormat.test(cleanId)) {
-    return {
-      valid: false,
-      error:
-        "Certificate ID can only contain letters, numbers, dashes, and underscores",
-    };
-  }
-
-  return { valid: true, value: cleanId };
-}
-
-// =====================================================
 // 1. CREATE NEW CERTIFICATE
 // =====================================================
 const createCertificate = async (req, res) => {
   try {
-    console.log("📥 Create certificate request:", req.body);
+    logger.info("Create certificate request:", req.body);
 
     const {
-      certificate_id,
-      jumlah_sertifikat_kbp,
-      jumlah_medali_kbp,
-      jumlah_sertifikat_snd,
-      jumlah_medali_snd,
-      jumlah_sertifikat_mkw,
-      jumlah_medali_mkw,
+      certificate_id: certificateId,
+      jumlah_sertifikat_kbp: jumlahSertifikatKbp,
+      jumlah_medali_kbp: jumlahMedaliKbp,
+      jumlah_sertifikat_snd: jumlahSertifikatSnd,
+      jumlah_medali_snd: jumlahMedaliSnd,
+      jumlah_sertifikat_mkw: jumlahSertifikatMkw,
+      jumlah_medali_mkw: jumlahMedaliMkw,
     } = req.body;
 
     // Validate certificate_id
-    const idValidation = validateCertificateId(certificate_id);
+    const idValidation = validators.validateCertificateId(certificateId);
     if (!idValidation.valid) {
-      return sendError(res, 400, idValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        idValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const cleanId = idValidation.value;
@@ -119,64 +73,82 @@ const createCertificate = async (req, res) => {
     );
 
     if (checkExisting.rows.length > 0) {
-      return sendError(res, 409, "Certificate ID already exists");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.CONFLICT,
+        "Certificate ID already exists",
+        CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY,
+      );
     }
 
     // Validate numeric inputs
     const validations = [
       {
-        value: jumlah_sertifikat_kbp || 0,
+        value: jumlahSertifikatKbp || 0,
         name: "KBP Certificates",
-        key: "sert_kbp",
+        key: "sertKbp",
       },
       {
-        value: jumlah_medali_kbp || 0,
+        value: jumlahMedaliKbp || 0,
         name: "KBP Medals",
-        key: "medal_kbp",
+        key: "medalKbp",
       },
       {
-        value: jumlah_sertifikat_snd || 0,
+        value: jumlahSertifikatSnd || 0,
         name: "SND Certificates",
-        key: "sert_snd",
+        key: "sertSnd",
       },
-      { value: jumlah_medali_snd || 0, name: "SND Medals", key: "medal_snd" },
       {
-        value: jumlah_sertifikat_mkw || 0,
+        value: jumlahMedaliSnd || 0,
+        name: "SND Medals",
+        key: "medalSnd",
+      },
+      {
+        value: jumlahSertifikatMkw || 0,
         name: "MKW Certificates",
-        key: "sert_mkw",
+        key: "sertMkw",
       },
       {
-        value: jumlah_medali_mkw || 0,
+        value: jumlahMedaliMkw || 0,
         name: "MKW Medals",
-        key: "medal_mkw",
+        key: "medalMkw",
       },
     ];
 
     const validated = {};
     for (const field of validations) {
-      const result = validatePositiveInteger(field.value, field.name);
+      const result = validators.validatePositiveInteger(
+        field.value,
+        field.name,
+      );
       if (!result.valid) {
-        return sendError(res, 400, result.error);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          result.error,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
       validated[field.key] = result.value;
     }
 
-    const sert_kbp = validated.sert_kbp;
-    const medal_kbp = validated.medal_kbp;
-    const sert_snd = validated.sert_snd;
-    const medal_snd = validated.medal_snd;
-    const sert_mkw = validated.sert_mkw;
-    const medal_mkw = validated.medal_mkw;
+    const sertKbp = validated.sertKbp;
+    const medalKbp = validated.medalKbp;
+    const sertSnd = validated.sertSnd;
+    const medalSnd = validated.medalSnd;
+    const sertMkw = validated.sertMkw;
+    const medalMkw = validated.medalMkw;
 
     // At least one must be > 0
     const totalInput =
-      sert_kbp + medal_kbp + sert_snd + medal_snd + sert_mkw + medal_mkw;
+      sertKbp + medalKbp + sertSnd + medalSnd + sertMkw + medalMkw;
 
     if (totalInput === 0) {
       return sendError(
         res,
-        400,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
         "At least one certificate or medal must be greater than 0 for any branch",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
 
@@ -189,23 +161,29 @@ const createCertificate = async (req, res) => {
         jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw) 
        VALUES ($1, $2, $3, $3, $4, $5, $5, $6, $7, $7) 
        RETURNING *`,
-      [cleanId, sert_kbp, medal_kbp, sert_snd, medal_snd, sert_mkw, medal_mkw],
+      [cleanId, sertKbp, medalKbp, sertSnd, medalSnd, sertMkw, medalMkw],
     );
 
-    console.log("✅ Certificate created:", result.rows[0]);
+    logger.info("Certificate created:", result.rows[0]);
 
     // Log action
     await logAction({
-      certificate_id: cleanId,
-      action_type: "CREATE",
-      description: `Created new certificate batch: SND: ${sert_snd} certs, ${medal_snd} medals | MKW: ${sert_mkw} certs, ${medal_mkw} medals | KBP: ${sert_kbp} certs, ${medal_kbp} medals`,
-      new_values: result.rows[0],
-      performed_by: req.user?.username || "System",
+      certificateId: cleanId,
+      actionType: CONSTANTS.LOG_ACTION_TYPES.CREATE,
+      description: `Created new certificate batch: SND: ${sertSnd} certs, ${medalSnd} medals | MKW: ${sertMkw} certs, ${medalMkw} medals | KBP: ${sertKbp} certs, ${medalKbp} medals`,
+      newValues: result.rows[0],
+      performedBy: req.user?.username || "System",
     });
 
     return sendSuccess(res, "Certificate created successfully", result.rows[0]);
   } catch (error) {
-    return sendError(res, 500, "Failed to create certificate", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to create certificate",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -214,14 +192,26 @@ const createCertificate = async (req, res) => {
 // =====================================================
 const getAllCertificates = async (req, res) => {
   try {
-    const { limit = 5, offset = 0 } = req.query;
+    const {
+      limit: limitParam = CONSTANTS.PAGINATION.CERTIFICATES_DEFAULT_LIMIT,
+      offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+    } = req.query;
 
     // Validate pagination params
-    const validatedLimit = Math.min(Math.max(parseInt(limit) || 5, 1), 100);
-    const validatedOffset = Math.max(parseInt(offset) || 0, 0);
+    const validatedLimit = Math.min(
+      Math.max(
+        parseInt(limitParam) || CONSTANTS.PAGINATION.CERTIFICATES_DEFAULT_LIMIT,
+        1,
+      ),
+      CONSTANTS.PAGINATION.MAX_LIMIT,
+    );
+    const validatedOffset = Math.max(
+      parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      0,
+    );
 
-    console.log(
-      `📥 Get certificates: limit=${validatedLimit}, offset=${validatedOffset}`,
+    logger.info(
+      `Get certificates: limit=${validatedLimit}, offset=${validatedOffset}`,
     );
 
     // Get paginated results WITH cumulative totals
@@ -260,7 +250,7 @@ const getAllCertificates = async (req, res) => {
       totalPages: Math.ceil(totalCount / validatedLimit),
     };
 
-    console.log(`✅ Returned ${result.rows.length}/${totalCount} certificates`);
+    logger.info(`Returned ${result.rows.length}/${totalCount} certificates`);
 
     return sendSuccess(
       res,
@@ -269,7 +259,13 @@ const getAllCertificates = async (req, res) => {
       { pagination, count: result.rows.length },
     );
   } catch (error) {
-    return sendError(res, 500, "Failed to retrieve certificates", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve certificates",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -280,9 +276,14 @@ const getCertificateById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const idValidation = validateCertificateId(id);
+    const idValidation = validators.validateCertificateId(id);
     if (!idValidation.valid) {
-      return sendError(res, 400, idValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        idValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const cleanId = idValidation.value;
@@ -293,7 +294,12 @@ const getCertificateById = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return sendError(res, 404, "Certificate not found");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Certificate not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     return sendSuccess(
@@ -302,7 +308,13 @@ const getCertificateById = async (req, res) => {
       result.rows[0],
     );
   } catch (error) {
-    return sendError(res, 500, "Failed to retrieve certificate", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve certificate",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -312,8 +324,9 @@ const getCertificateById = async (req, res) => {
 const updateCertificate = async (req, res) => {
   return sendError(
     res,
-    403,
+    CONSTANTS.HTTP_STATUS.FORBIDDEN,
     "Update operation is not allowed. Please create a new batch for adjustments or use migration feature.",
+    CONSTANTS.ERROR_CODES.FORBIDDEN,
   );
 };
 
@@ -323,8 +336,9 @@ const updateCertificate = async (req, res) => {
 const deleteCertificate = async (req, res) => {
   return sendError(
     res,
-    403,
+    CONSTANTS.HTTP_STATUS.FORBIDDEN,
     "Delete operation is not allowed. Batches are permanent records for audit purposes.",
+    CONSTANTS.ERROR_CODES.FORBIDDEN,
   );
 };
 
@@ -336,18 +350,26 @@ const clearAllCertificates = async (req, res) => {
 
   try {
     await client.query("BEGIN");
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
-    console.log("🗑️ Clear all certificates requested");
+    logger.info("Clear all certificates requested");
 
     const allCertsResult = await client.query("SELECT * FROM certificates");
     const allCertificates = allCertsResult.rows;
 
     if (allCertificates.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, "No certificates to delete");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "No certificates to delete",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    console.log(`📊 Found ${allCertificates.length} certificates to delete`);
+    logger.info(`Found ${allCertificates.length} certificates to delete`);
 
     let totalCert = 0;
     let totalMedal = 0;
@@ -367,7 +389,7 @@ const clearAllCertificates = async (req, res) => {
       "DELETE FROM certificates RETURNING *",
     );
 
-    console.log(`✅ Deleted ${deleteResult.rows.length} certificates`);
+    logger.info(`Deleted ${deleteResult.rows.length} certificates`);
 
     // Log action
     await client.query(
@@ -377,7 +399,7 @@ const clearAllCertificates = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         "BULK_DELETE",
-        "DELETE_ALL",
+        CONSTANTS.LOG_ACTION_TYPES.DELETE_ALL,
         `Cleared all ${allCertificates.length} certificate batches. Total: ${totalCert} certificates, ${totalMedal} medals deleted`,
         totalCert,
         totalMedal,
@@ -404,7 +426,13 @@ const clearAllCertificates = async (req, res) => {
     );
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, 500, "Failed to clear certificates", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to clear certificates",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -418,68 +446,93 @@ const migrateCertificate = async (req, res) => {
 
   try {
     await client.query("BEGIN");
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
-    console.log("🔄 Migrate request:", req.body);
+    logger.info("Migrate request:", req.body);
 
     const {
-      certificate_id,
-      destination_branch,
-      certificate_amount,
-      medal_amount,
+      certificate_id: certificateId,
+      destination_branch: destinationBranch,
+      certificate_amount: certificateAmount,
+      medal_amount: medalAmount,
     } = req.body;
 
     // Validate certificate_id
-    const idValidation = validateCertificateId(certificate_id);
+    const idValidation = validators.validateCertificateId(certificateId);
     if (!idValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, idValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        idValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const cleanId = idValidation.value;
 
     // Validate destination branch
-    if (!destination_branch || !destination_branch.trim()) {
+    if (!destinationBranch || !destinationBranch.trim()) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, "Destination branch is required");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Destination branch is required",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    const destBranch = destination_branch.trim().toLowerCase();
+    const destBranch = destinationBranch.trim().toLowerCase();
     if (destBranch !== "mkw" && destBranch !== "kbp") {
       await client.query("ROLLBACK");
       return sendError(
         res,
-        400,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
         "Invalid destination branch. Must be 'mkw' or 'kbp'",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
 
     // Validate amounts
-    const certValidation = validatePositiveInteger(
-      certificate_amount || 0,
+    const certValidation = validators.validatePositiveInteger(
+      certificateAmount || 0,
       "Certificate amount",
     );
     if (!certValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, certValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        certValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
     const certAmount = certValidation.value;
 
-    const medalValidation = validatePositiveInteger(
-      medal_amount || 0,
+    const medalValidation = validators.validatePositiveInteger(
+      medalAmount || 0,
       "Medal amount",
     );
     if (!medalValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, 400, medalValidation.error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        medalValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
-    const medalAmount = medalValidation.value;
+    const medalAmountValue = medalValidation.value;
 
-    if (certAmount <= 0 && medalAmount <= 0) {
+    if (certAmount <= 0 && medalAmountValue <= 0) {
       await client.query("ROLLBACK");
       return sendError(
         res,
-        400,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
         "At least one amount (certificates or medals) must be greater than 0",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
 
@@ -491,7 +544,12 @@ const migrateCertificate = async (req, res) => {
 
     if (certResult.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, 404, "Certificate not found");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Certificate not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     const certificate = certResult.rows[0];
@@ -501,31 +559,36 @@ const migrateCertificate = async (req, res) => {
       await client.query("ROLLBACK");
       return sendError(
         res,
-        400,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
         `Insufficient SND certificate stock in this batch. Available: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
+        CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
       );
     }
 
-    if (medalAmount > 0 && certificate.jumlah_medali_snd < medalAmount) {
+    if (
+      medalAmountValue > 0 &&
+      certificate.jumlah_medali_snd < medalAmountValue
+    ) {
       await client.query("ROLLBACK");
       return sendError(
         res,
-        400,
-        `Insufficient SND medal stock in this batch. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmount}`,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        `Insufficient SND medal stock in this batch. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmountValue}`,
+        CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
       );
     }
 
     // Calculate new amounts
     const newSndCert = certificate.jumlah_sertifikat_snd - certAmount;
-    const newSndMedal = certificate.jumlah_medali_snd - medalAmount;
+    const newSndMedal = certificate.jumlah_medali_snd - medalAmountValue;
 
     let newDestCert, newDestMedal;
     if (destBranch === "mkw") {
       newDestCert = certificate.jumlah_sertifikat_mkw + certAmount;
-      newDestMedal = certificate.jumlah_medali_mkw + medalAmount;
+      newDestMedal = certificate.jumlah_medali_mkw + medalAmountValue;
     } else {
       newDestCert = certificate.jumlah_sertifikat_kbp + certAmount;
-      newDestMedal = certificate.jumlah_medali_kbp + medalAmount;
+      newDestMedal = certificate.jumlah_medali_kbp + medalAmountValue;
     }
 
     // Update
@@ -556,7 +619,8 @@ const migrateCertificate = async (req, res) => {
     // Log action
     const migrationItems = [];
     if (certAmount > 0) migrationItems.push(`${certAmount} certificate(s)`);
-    if (medalAmount > 0) migrationItems.push(`${medalAmount} medal(s)`);
+    if (medalAmountValue > 0)
+      migrationItems.push(`${medalAmountValue} medal(s)`);
 
     await client.query(
       `INSERT INTO certificate_logs 
@@ -565,12 +629,12 @@ const migrateCertificate = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         cleanId,
-        "MIGRATE",
+        CONSTANTS.LOG_ACTION_TYPES.MIGRATE,
         `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()} (Batch: ${cleanId})`,
         "snd",
         destBranch,
         certAmount,
-        medalAmount,
+        medalAmountValue,
         JSON.stringify({
           snd_certs: certificate.jumlah_sertifikat_snd,
           snd_medals: certificate.jumlah_medali_snd,
@@ -595,6 +659,10 @@ const migrateCertificate = async (req, res) => {
 
     await client.query("COMMIT");
 
+    logger.info(
+      `Migration successful: ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
+    );
+
     return sendSuccess(
       res,
       `Successfully migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
@@ -615,7 +683,7 @@ const migrateCertificate = async (req, res) => {
             new_dest: newDestCert,
           },
           medals: {
-            amount: medalAmount,
+            amount: medalAmountValue,
             previous_snd: certificate.jumlah_medali_snd,
             new_snd: newSndMedal,
             previous_dest:
@@ -629,7 +697,13 @@ const migrateCertificate = async (req, res) => {
     );
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, 500, "Failed to migrate certificate", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to migrate certificate",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -640,7 +714,7 @@ const migrateCertificate = async (req, res) => {
 // =====================================================
 const getStockSummary = async (req, res) => {
   try {
-    console.log("📊 Fetching stock summary...");
+    logger.info("Fetching stock summary...");
 
     const summaryQuery = await pool.query(`
       SELECT 
@@ -682,13 +756,19 @@ const getStockSummary = async (req, res) => {
       },
     };
 
-    console.log("✅ Stock summary generated");
+    logger.info("Stock summary generated successfully");
 
     return sendSuccess(res, "Stock summary retrieved successfully", data, {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return sendError(res, 500, "Failed to retrieve stock summary", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve stock summary",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -697,12 +777,26 @@ const getStockSummary = async (req, res) => {
 // =====================================================
 const getTransactionHistory = async (req, res) => {
   try {
-    const { limit = 50, offset = 0, from_date, to_date } = req.query;
+    const {
+      limit: limitParam = CONSTANTS.PAGINATION.HISTORY_DEFAULT_LIMIT,
+      offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      from_date: fromDate,
+      to_date: toDate,
+    } = req.query;
 
-    console.log("📜 Fetching transaction history:", req.query);
+    logger.info("Fetching transaction history:", req.query);
 
-    const validatedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 1000);
-    const validatedOffset = Math.max(parseInt(offset) || 0, 0);
+    const validatedLimit = Math.min(
+      Math.max(
+        parseInt(limitParam) || CONSTANTS.PAGINATION.HISTORY_DEFAULT_LIMIT,
+        1,
+      ),
+      CONSTANTS.PAGINATION.MAX_LIMIT,
+    );
+    const validatedOffset = Math.max(
+      parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      0,
+    );
 
     let query = `
       SELECT 
@@ -719,15 +813,15 @@ const getTransactionHistory = async (req, res) => {
     const params = [];
     let paramCount = 1;
 
-    if (from_date && from_date.trim()) {
+    if (fromDate && fromDate.trim()) {
       query += ` AND created_at >= $${paramCount}`;
-      params.push(from_date.trim());
+      params.push(fromDate.trim());
       paramCount++;
     }
 
-    if (to_date && to_date.trim()) {
+    if (toDate && toDate.trim()) {
       query += ` AND created_at < $${paramCount}::date + interval '1 day'`;
-      params.push(to_date.trim());
+      params.push(toDate.trim());
       paramCount++;
     }
 
@@ -742,20 +836,24 @@ const getTransactionHistory = async (req, res) => {
     const countParams = [];
     let countParamNum = 1;
 
-    if (from_date && from_date.trim()) {
+    if (fromDate && fromDate.trim()) {
       countQuery += ` AND created_at >= $${countParamNum}`;
-      countParams.push(from_date.trim());
+      countParams.push(fromDate.trim());
       countParamNum++;
     }
 
-    if (to_date && to_date.trim()) {
+    if (toDate && toDate.trim()) {
       countQuery += ` AND created_at < $${countParamNum}::date + interval '1 day'`;
-      countParams.push(to_date.trim());
+      countParams.push(toDate.trim());
       countParamNum++;
     }
 
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
+
+    logger.info(
+      `Transaction history retrieved: ${result.rows.length}/${totalCount} records`,
+    );
 
     return sendSuccess(
       res,
@@ -773,7 +871,13 @@ const getTransactionHistory = async (req, res) => {
       },
     );
   } catch (error) {
-    return sendError(res, 500, "Failed to retrieve transaction history", error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve transaction history",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 

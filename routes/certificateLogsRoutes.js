@@ -1,25 +1,37 @@
-// Certificate Logs Routes - FIXED VERSION
-
+// routes/certificateLogsRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
   getLogs,
   getLogsByCertificate,
   deleteOldLogs,
-  recoverFailedLogs, // NEW
+  recoverFailedLogs,
 } = require("../controllers/CertificateLogsController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
-// Get all logs with filters
-router.get("/", verifyToken, getLogs);
+// =====================================================
+// ALL ROUTES REQUIRE AUTHENTICATION
+// =====================================================
+router.use(verifyToken);
 
-// Get logs for specific certificate
-router.get("/certificate/:id", verifyToken, getLogsByCertificate);
+// =====================================================
+// LOG RETRIEVAL
+// =====================================================
 
-// Delete old logs (admin only - add admin check if needed)
-router.delete("/cleanup", verifyToken, deleteOldLogs);
+// Get all logs with filters (pagination, search, date range)
+router.get("/", getLogs);
 
-// NEW: Recover failed logs from backup file
-router.post("/recover", verifyToken, recoverFailedLogs);
+// Get logs for specific certificate batch
+router.get("/certificate/:id", getLogsByCertificate);
+
+// =====================================================
+// LOG MANAGEMENT (ADMIN ONLY - consider adding requireAdmin middleware)
+// =====================================================
+
+// Delete old logs (cleanup - default 90 days)
+router.delete("/cleanup", deleteOldLogs);
+
+// Recover failed logs from backup file
+router.post("/recover", recoverFailedLogs);
 
 module.exports = router;

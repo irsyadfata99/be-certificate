@@ -9,6 +9,7 @@ const certificateLogsRoutes = require("./routes/certificateLogsRoutes");
 const userRoutes = require("./routes/userRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
+const printedCertificatesRoutes = require("./routes/printedCertificates"); // ADDED
 
 const app = express();
 
@@ -40,7 +41,9 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else if (process.env.NODE_ENV === "development") {
-      console.warn(`⚠️  Warning: Allowing origin ${origin} in development mode`);
+      console.warn(
+        `⚠️  Warning: Allowing origin ${origin} in development mode`,
+      );
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -48,7 +51,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+  ],
 };
 
 app.use(cors(corsOptions));
@@ -79,6 +88,7 @@ app.use("/api/logs", certificateLogsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/modules", moduleRoutes);
+app.use("/api/printed-certificates", printedCertificatesRoutes); // ADDED
 
 // =====================================================
 // ROOT & HEALTH CHECK
@@ -87,7 +97,7 @@ app.use("/api/modules", moduleRoutes);
 app.get("/", (req, res) => {
   res.json({
     message: "Certificate Management API is running",
-    version: "2.2.0",
+    version: "2.3.0", // UPDATED VERSION
     environment: process.env.NODE_ENV || "development",
     endpoints: {
       auth: "/api/auth",
@@ -98,6 +108,7 @@ app.get("/", (req, res) => {
       logs: "/api/logs",
       teachers: "/api/teachers",
       modules: "/api/modules",
+      printedCertificates: "/api/printed-certificates", // ADDED
     },
   });
 });
@@ -157,6 +168,9 @@ const server = app.listen(PORT, () => {
   console.log(`📊 Summary: http://localhost:${PORT}/api/certificates/summary`);
   console.log(`👥 Teachers: http://localhost:${PORT}/api/teachers`);
   console.log(`📚 Modules: http://localhost:${PORT}/api/modules`);
+  console.log(
+    `📜 Printed Certificates: http://localhost:${PORT}/api/printed-certificates`,
+  );
   console.log("=".repeat(50));
 });
 

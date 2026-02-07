@@ -1,4 +1,6 @@
 // routes/userRoutes.js
+// Handles current user profile and settings
+
 const express = require("express");
 const router = express.Router();
 const {
@@ -8,15 +10,26 @@ const {
 } = require("../controllers/UserController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
-console.log("✅ User routes loaded");
+// =====================================================
+// ALL ROUTES REQUIRE AUTHENTICATION
+// =====================================================
+router.use(verifyToken);
 
-// Get current user profile
-router.get("/profile", verifyToken, getProfile);
+// =====================================================
+// PROFILE MANAGEMENT
+// =====================================================
 
-// Update username
-router.put("/username", verifyToken, updateUsername);
+// Get current logged-in user profile
+router.get("/profile", getProfile);
 
-// Update password
-router.put("/password", verifyToken, updatePassword);
+// =====================================================
+// ACCOUNT SETTINGS
+// =====================================================
+
+// Update username (requires current password verification)
+router.put("/username", updateUsername);
+
+// Update password (requires current password verification)
+router.put("/password", updatePassword);
 
 module.exports = router;

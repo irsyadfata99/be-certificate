@@ -1,16 +1,20 @@
-// Certificate Print API Routes - FIXED VERSION
-// File: routes/printedCertificates.js
+// routes/printedCertificates.js
+// Certificate Print API Routes - PRODUCTION READY
 
 const express = require("express");
 const router = express.Router();
-const pool = require("../config/database"); // FIXED: was "../db"
+const pool = require("../config/database");
 const {
   verifyToken,
   requireAdmin,
   requireTeacher,
-} = require("../auth/AuthMiddleware"); // FIXED: was "../middleware/auth"
+} = require("../auth/AuthMiddleware");
 const logger = require("../utils/logger");
 const CONSTANTS = require("../utils/constants");
+
+// =====================================================
+// ALL ROUTES REQUIRE AUTHENTICATION
+// =====================================================
 
 // ============================================================================
 // GET /api/printed-certificates/modules
@@ -43,7 +47,12 @@ router.get("/modules", verifyToken, async (req, res) => {
 // Save printed certificate record
 // ============================================================================
 router.post("/", verifyToken, async (req, res) => {
-  const { certificateId, studentName, moduleId, ptcDate } = req.body;
+  const {
+    certificate_id: certificateId,
+    student_name: studentName,
+    module_id: moduleId,
+    ptc_date: ptcDate,
+  } = req.body;
 
   const userId = req.user.id;
   const userBranch = req.user.teacher_branch; // From JWT token
@@ -159,9 +168,9 @@ router.get("/history", verifyToken, async (req, res) => {
     page = 1,
     limit = CONSTANTS.PAGINATION.DEFAULT_LIMIT,
     search = "",
-    moduleId,
-    startDate,
-    endDate,
+    module_id: moduleId,
+    start_date: startDate,
+    end_date: endDate,
   } = req.query;
 
   const offset = (page - 1) * limit;

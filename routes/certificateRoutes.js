@@ -1,3 +1,4 @@
+// routes/certificateRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
@@ -6,7 +7,7 @@ const {
   getCertificateById,
   updateCertificate,
   deleteCertificate,
-  clearAllCertificates, // NEW
+  clearAllCertificates,
   migrateCertificate,
   getStockSummary,
   getTransactionHistory,
@@ -14,38 +15,47 @@ const {
 const { verifyToken } = require("../auth/AuthMiddleware");
 
 // =====================================================
-// NEW ENDPOINTS - Stock Summary & Transaction History
+// ALL ROUTES REQUIRE AUTHENTICATION
+// =====================================================
+router.use(verifyToken);
+
+// =====================================================
+// SUMMARY & REPORTING ENDPOINTS
 // =====================================================
 
 // Get current stock summary (total across all batches)
-router.get("/summary", verifyToken, getStockSummary);
+router.get("/summary", getStockSummary);
 
 // Get transaction history with filters
-router.get("/history", verifyToken, getTransactionHistory);
+router.get("/history", getTransactionHistory);
 
 // =====================================================
-// ORIGINAL ENDPOINTS
+// BATCH OPERATIONS
 // =====================================================
 
 // Create new batch (input stock)
-router.post("/", verifyToken, createCertificate);
+router.post("/", createCertificate);
 
-// Get all certificates
-router.get("/", verifyToken, getAllCertificates);
-
-// Get specific certificate by ID
-router.get("/:id", verifyToken, getCertificateById);
-
-// Update certificate (DISABLED - will return 403 error)
-router.put("/:id", verifyToken, updateCertificate);
-
-// Delete certificate (DISABLED - will return 403 error)
-router.delete("/:id", verifyToken, deleteCertificate);
-
-// NEW: Clear all certificates (bulk delete)
-router.post("/clear-all", verifyToken, clearAllCertificates);
+// Clear all certificates (bulk delete)
+router.post("/clear-all", clearAllCertificates);
 
 // Migrate stock from SND to other branches
-router.post("/migrate", verifyToken, migrateCertificate);
+router.post("/migrate", migrateCertificate);
+
+// =====================================================
+// INDIVIDUAL CERTIFICATE OPERATIONS
+// =====================================================
+
+// Get all certificates (with pagination)
+router.get("/", getAllCertificates);
+
+// Get specific certificate by ID
+router.get("/:id", getCertificateById);
+
+// Update certificate (DISABLED - will return 403 error)
+router.put("/:id", updateCertificate);
+
+// Delete certificate (DISABLED - will return 403 error)
+router.delete("/:id", deleteCertificate);
 
 module.exports = router;
