@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const logger = require("../utils/logger");
 require("dotenv").config();
 
 const pool = new Pool({
@@ -7,27 +8,26 @@ const pool = new Pool({
   database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
-  // Connection pool configuration
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection cannot be established
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+  statement_timeout: 30000,
 });
 
 pool.on("connect", () => {
-  console.log("✅ Connected to PostgreSQL database");
+  logger.info("✅ Connected to PostgreSQL database");
 });
 
 pool.on("error", (err) => {
-  console.error("❌ Unexpected error on idle client", err);
-  process.exit(-1);
+  logger.error("Unexpected error on idle client", err);
 });
 
 // Test connection on startup
 pool.query("SELECT NOW()", (err, res) => {
   if (err) {
-    console.error("❌ Database connection test failed:", err);
+    logger.error("❌ Database connection test failed:", err);
   } else {
-    console.log("✅ Database connection test successful");
+    logger.info("✅ Database connection test successful");
   }
 });
 

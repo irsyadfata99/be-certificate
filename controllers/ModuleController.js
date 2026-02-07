@@ -1,43 +1,8 @@
-// Module Controller - PRODUCTION READY ✅
-// No changes needed - already follows all best practices
-
 const pool = require("../config/database");
 const logger = require("../utils/logger");
 const CONSTANTS = require("../utils/constants");
 const validators = require("../utils/validators");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
-
-// =====================================================
-// HELPER FUNCTIONS
-// =====================================================
-
-function sendError(res, statusCode, message, errorCode = null, error = null) {
-  const response = {
-    success: false,
-    message: message,
-    errorCode: errorCode,
-  };
-
-  if (error && process.env.NODE_ENV === "development") {
-    response.error = error.message;
-    response.stack = error.stack;
-  }
-
-  logger.error(`Error (${statusCode}): ${message}`, error || "");
-  return res.status(statusCode).json(response);
-}
-
-function sendSuccess(res, message, data = null, meta = null) {
-  const response = {
-    success: true,
-    message: message,
-  };
-
-  if (data !== null) response.data = data;
-  if (meta !== null) response.meta = meta;
-
-  return res.json(response);
-}
 
 const ModuleController = {
   // Get all modules with pagination and filters

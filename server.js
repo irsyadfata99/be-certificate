@@ -1,6 +1,7 @@
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
+const logger = require("./utils/logger");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
@@ -9,7 +10,7 @@ const certificateLogsRoutes = require("./routes/certificateLogsRoutes");
 const userRoutes = require("./routes/userRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
-const printedCertificatesRoutes = require("./routes/printedCertificates"); // ADDED
+const printedCertificatesRoutes = require("./routes/printedCertificates");
 
 const app = express();
 
@@ -41,9 +42,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else if (process.env.NODE_ENV === "development") {
-      console.warn(
-        `⚠️  Warning: Allowing origin ${origin} in development mode`,
-      );
+      logger.warn(`⚠️  Warning: Allowing origin ${origin} in development mode`);
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -66,15 +65,15 @@ app.use(cors(corsOptions));
 // BODY PARSING MIDDLEWARE (with size limits)
 // =====================================================
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // =====================================================
 // REQUEST LOGGING MIDDLEWARE
 // =====================================================
 
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  logger.info(`${req.method} ${req.path}`);
   next();
 });
 
@@ -88,7 +87,7 @@ app.use("/api/logs", certificateLogsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/modules", moduleRoutes);
-app.use("/api/printed-certificates", printedCertificatesRoutes); // ADDED
+app.use("/api/printed-certificates", printedCertificatesRoutes);
 
 // =====================================================
 // ROOT & HEALTH CHECK
@@ -97,7 +96,7 @@ app.use("/api/printed-certificates", printedCertificatesRoutes); // ADDED
 app.get("/", (req, res) => {
   res.json({
     message: "Certificate Management API is running",
-    version: "2.3.0", // UPDATED VERSION
+    version: "2.3.0",
     environment: process.env.NODE_ENV || "development",
     endpoints: {
       auth: "/api/auth",
@@ -108,7 +107,7 @@ app.get("/", (req, res) => {
       logs: "/api/logs",
       teachers: "/api/teachers",
       modules: "/api/modules",
-      printedCertificates: "/api/printed-certificates", // ADDED
+      printedCertificates: "/api/printed-certificates",
     },
   });
 });
@@ -136,7 +135,7 @@ app.use((req, res) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err);
+  logger.error("Server Error:", err);
 
   // CORS error
   if (err.message === "Not allowed by CORS") {
@@ -161,17 +160,17 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
-  console.log("=".repeat(50));
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`🔗 API: http://localhost:${PORT}`);
-  console.log(`📊 Summary: http://localhost:${PORT}/api/certificates/summary`);
-  console.log(`👥 Teachers: http://localhost:${PORT}/api/teachers`);
-  console.log(`📚 Modules: http://localhost:${PORT}/api/modules`);
-  console.log(
+  logger.info("=".repeat(50));
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
+  logger.info(`🔗 API: http://localhost:${PORT}`);
+  logger.info(`📊 Summary: http://localhost:${PORT}/api/certificates/summary`);
+  logger.info(`👥 Teachers: http://localhost:${PORT}/api/teachers`);
+  logger.info(`📚 Modules: http://localhost:${PORT}/api/modules`);
+  logger.info(
     `📜 Printed Certificates: http://localhost:${PORT}/api/printed-certificates`,
   );
-  console.log("=".repeat(50));
+  logger.info("=".repeat(50));
 });
 
 // =====================================================
@@ -179,17 +178,17 @@ const server = app.listen(PORT, () => {
 // =====================================================
 
 process.on("SIGTERM", () => {
-  console.log("SIGTERM signal received: closing HTTP server");
+  logger.info("SIGTERM signal received: closing HTTP server");
   server.close(() => {
-    console.log("HTTP server closed");
+    logger.info("HTTP server closed");
     process.exit(0);
   });
 });
 
 process.on("SIGINT", () => {
-  console.log("SIGINT signal received: closing HTTP server");
+  logger.info("SIGINT signal received: closing HTTP server");
   server.close(() => {
-    console.log("HTTP server closed");
+    logger.info("HTTP server closed");
     process.exit(0);
   });
 });

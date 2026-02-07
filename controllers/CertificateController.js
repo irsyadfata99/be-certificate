@@ -7,37 +7,6 @@ const validators = require("../utils/validators");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
 
 // =====================================================
-// STANDARDIZED ERROR RESPONSE HELPER
-// =====================================================
-function sendError(res, statusCode, message, errorCode = null, error = null) {
-  const response = {
-    success: false,
-    message: message,
-    errorCode: errorCode,
-  };
-
-  if (error && process.env.NODE_ENV === "development") {
-    response.error = error.message;
-    response.stack = error.stack;
-  }
-
-  logger.error(`Error (${statusCode}): ${message}`, error || "");
-  return res.status(statusCode).json(response);
-}
-
-function sendSuccess(res, message, data = null, meta = null) {
-  const response = {
-    success: true,
-    message: message,
-  };
-
-  if (data !== null) response.data = data;
-  if (meta !== null) response.meta = meta;
-
-  return res.json(response);
-}
-
-// =====================================================
 // 1. CREATE NEW CERTIFICATE
 // =====================================================
 const createCertificate = async (req, res) => {
@@ -442,262 +411,298 @@ const clearAllCertificates = async (req, res) => {
 // =====================================================
 // 7. MIGRATE CERTIFICATE
 // =====================================================
+// =====================================================
+// 7. MIGRATE CERTIFICATE - WITH RETRY LOGIC
+// =====================================================
 const migrateCertificate = async (req, res) => {
   const client = await pool.connect();
 
+  // ✅ ADD: Retry logic dengan exponential backoff
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+
   try {
-    await client.query("BEGIN");
-    await client.query(
-      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
-    );
+    while (retryCount < MAX_RETRIES) {
+      try {
+        await client.query("BEGIN");
+        await client.query(
+          `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+        );
 
-    logger.info("Migrate request:", req.body);
+        // ✅ ADD: Lock timeout untuk avoid deadlock
+        await client.query("SET LOCAL lock_timeout = '2s'");
 
-    const {
-      certificate_id: certificateId,
-      destination_branch: destinationBranch,
-      certificate_amount: certificateAmount,
-      medal_amount: medalAmount,
-    } = req.body;
+        logger.info("Migrate request:", req.body);
 
-    // Validate certificate_id
-    const idValidation = validators.validateCertificateId(certificateId);
-    if (!idValidation.valid) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        idValidation.error,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
-    }
+        const {
+          certificate_id: certificateId,
+          destination_branch: destinationBranch,
+          certificate_amount: certificateAmount,
+          medal_amount: medalAmount,
+        } = req.body;
 
-    const cleanId = idValidation.value;
+        // Validate certificate_id
+        const idValidation = validators.validateCertificateId(certificateId);
+        if (!idValidation.valid) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            idValidation.error,
+            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
 
-    // Validate destination branch
-    if (!destinationBranch || !destinationBranch.trim()) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Destination branch is required",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
-    }
+        const cleanId = idValidation.value;
 
-    const destBranch = destinationBranch.trim().toLowerCase();
-    if (destBranch !== "mkw" && destBranch !== "kbp") {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Invalid destination branch. Must be 'mkw' or 'kbp'",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
-    }
+        // Validate destination branch
+        if (!destinationBranch || !destinationBranch.trim()) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            "Destination branch is required",
+            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
 
-    // Validate amounts
-    const certValidation = validators.validatePositiveInteger(
-      certificateAmount || 0,
-      "Certificate amount",
-    );
-    if (!certValidation.valid) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        certValidation.error,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
-    }
-    const certAmount = certValidation.value;
+        const destBranch = destinationBranch.trim().toLowerCase();
+        if (destBranch !== "mkw" && destBranch !== "kbp") {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            "Invalid destination branch. Must be 'mkw' or 'kbp'",
+            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
 
-    const medalValidation = validators.validatePositiveInteger(
-      medalAmount || 0,
-      "Medal amount",
-    );
-    if (!medalValidation.valid) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        medalValidation.error,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
-    }
-    const medalAmountValue = medalValidation.value;
+        // Validate amounts
+        const certValidation = validators.validatePositiveInteger(
+          certificateAmount || 0,
+          "Certificate amount",
+        );
+        if (!certValidation.valid) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            certValidation.error,
+            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
+        const certAmount = certValidation.value;
 
-    if (certAmount <= 0 && medalAmountValue <= 0) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "At least one amount (certificates or medals) must be greater than 0",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
-    }
+        const medalValidation = validators.validatePositiveInteger(
+          medalAmount || 0,
+          "Medal amount",
+        );
+        if (!medalValidation.valid) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            medalValidation.error,
+            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
+        const medalAmountValue = medalValidation.value;
 
-    // Get certificate with lock
-    const certResult = await client.query(
-      "SELECT * FROM certificates WHERE certificate_id = $1 FOR UPDATE",
-      [cleanId],
-    );
+        if (certAmount <= 0 && medalAmountValue <= 0) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            "At least one amount (certificates or medals) must be greater than 0",
+            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
 
-    if (certResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "Certificate not found",
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
-    }
+        // ✅ MODIFIED: Get certificate with lock NOWAIT
+        const certResult = await client.query(
+          "SELECT * FROM certificates WHERE certificate_id = $1 FOR UPDATE NOWAIT",
+          [cleanId],
+        );
 
-    const certificate = certResult.rows[0];
+        if (certResult.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.NOT_FOUND,
+            "Certificate not found",
+            CONSTANTS.ERROR_CODES.NOT_FOUND,
+          );
+        }
 
-    // Check stock
-    if (certAmount > 0 && certificate.jumlah_sertifikat_snd < certAmount) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Insufficient SND certificate stock in this batch. Available: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
-        CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
-      );
-    }
+        const certificate = certResult.rows[0];
 
-    if (
-      medalAmountValue > 0 &&
-      certificate.jumlah_medali_snd < medalAmountValue
-    ) {
-      await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Insufficient SND medal stock in this batch. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmountValue}`,
-        CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
-      );
-    }
+        // Check stock
+        if (certAmount > 0 && certificate.jumlah_sertifikat_snd < certAmount) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            `Insufficient SND certificate stock in this batch. Available: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
+            CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
+          );
+        }
 
-    // Calculate new amounts
-    const newSndCert = certificate.jumlah_sertifikat_snd - certAmount;
-    const newSndMedal = certificate.jumlah_medali_snd - medalAmountValue;
+        if (
+          medalAmountValue > 0 &&
+          certificate.jumlah_medali_snd < medalAmountValue
+        ) {
+          await client.query("ROLLBACK");
+          return sendError(
+            res,
+            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+            `Insufficient SND medal stock in this batch. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmountValue}`,
+            CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
+          );
+        }
 
-    let newDestCert, newDestMedal;
-    if (destBranch === "mkw") {
-      newDestCert = certificate.jumlah_sertifikat_mkw + certAmount;
-      newDestMedal = certificate.jumlah_medali_mkw + medalAmountValue;
-    } else {
-      newDestCert = certificate.jumlah_sertifikat_kbp + certAmount;
-      newDestMedal = certificate.jumlah_medali_kbp + medalAmountValue;
-    }
+        // Calculate new amounts
+        const newSndCert = certificate.jumlah_sertifikat_snd - certAmount;
+        const newSndMedal = certificate.jumlah_medali_snd - medalAmountValue;
 
-    // Update
-    const destCertField =
-      destBranch === "mkw" ? "jumlah_sertifikat_mkw" : "jumlah_sertifikat_kbp";
-    const destMedalField =
-      destBranch === "mkw" ? "jumlah_medali_mkw" : "jumlah_medali_kbp";
+        let newDestCert, newDestMedal;
+        if (destBranch === "mkw") {
+          newDestCert = certificate.jumlah_sertifikat_mkw + certAmount;
+          newDestMedal = certificate.jumlah_medali_mkw + medalAmountValue;
+        } else {
+          newDestCert = certificate.jumlah_sertifikat_kbp + certAmount;
+          newDestMedal = certificate.jumlah_medali_kbp + medalAmountValue;
+        }
 
-    const updateQuery = `
-      UPDATE certificates 
-      SET jumlah_sertifikat_snd = $1,
-          jumlah_medali_snd = $2,
-          ${destCertField} = $3,
-          ${destMedalField} = $4,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE certificate_id = $5
-      RETURNING *
-    `;
+        // Update
+        const destCertField =
+          destBranch === "mkw"
+            ? "jumlah_sertifikat_mkw"
+            : "jumlah_sertifikat_kbp";
+        const destMedalField =
+          destBranch === "mkw" ? "jumlah_medali_mkw" : "jumlah_medali_kbp";
 
-    const result = await client.query(updateQuery, [
-      newSndCert,
-      newSndMedal,
-      newDestCert,
-      newDestMedal,
-      cleanId,
-    ]);
+        const updateQuery = `
+          UPDATE certificates 
+          SET jumlah_sertifikat_snd = $1,
+              jumlah_medali_snd = $2,
+              ${destCertField} = $3,
+              ${destMedalField} = $4,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE certificate_id = $5
+          RETURNING *
+        `;
 
-    // Log action
-    const migrationItems = [];
-    if (certAmount > 0) migrationItems.push(`${certAmount} certificate(s)`);
-    if (medalAmountValue > 0)
-      migrationItems.push(`${medalAmountValue} medal(s)`);
+        const result = await client.query(updateQuery, [
+          newSndCert,
+          newSndMedal,
+          newDestCert,
+          newDestMedal,
+          cleanId,
+        ]);
 
-    await client.query(
-      `INSERT INTO certificate_logs 
-       (certificate_id, action_type, description, from_branch, to_branch, 
-        certificate_amount, medal_amount, old_values, new_values, performed_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [
-        cleanId,
-        CONSTANTS.LOG_ACTION_TYPES.MIGRATE,
-        `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()} (Batch: ${cleanId})`,
-        "snd",
-        destBranch,
-        certAmount,
-        medalAmountValue,
-        JSON.stringify({
-          snd_certs: certificate.jumlah_sertifikat_snd,
-          snd_medals: certificate.jumlah_medali_snd,
-          dest_certs:
-            destBranch === "mkw"
-              ? certificate.jumlah_sertifikat_mkw
-              : certificate.jumlah_sertifikat_kbp,
-          dest_medals:
-            destBranch === "mkw"
-              ? certificate.jumlah_medali_mkw
-              : certificate.jumlah_medali_kbp,
-        }),
-        JSON.stringify({
-          snd_certs: newSndCert,
-          snd_medals: newSndMedal,
-          dest_certs: newDestCert,
-          dest_medals: newDestMedal,
-        }),
-        req.user?.username || "System",
-      ],
-    );
+        // Log action
+        const migrationItems = [];
+        if (certAmount > 0) migrationItems.push(`${certAmount} certificate(s)`);
+        if (medalAmountValue > 0)
+          migrationItems.push(`${medalAmountValue} medal(s)`);
 
-    await client.query("COMMIT");
+        await client.query(
+          `INSERT INTO certificate_logs 
+           (certificate_id, action_type, description, from_branch, to_branch, 
+            certificate_amount, medal_amount, old_values, new_values, performed_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            cleanId,
+            CONSTANTS.LOG_ACTION_TYPES.MIGRATE,
+            `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()} (Batch: ${cleanId})`,
+            "snd",
+            destBranch,
+            certAmount,
+            medalAmountValue,
+            JSON.stringify({
+              snd_certs: certificate.jumlah_sertifikat_snd,
+              snd_medals: certificate.jumlah_medali_snd,
+              dest_certs:
+                destBranch === "mkw"
+                  ? certificate.jumlah_sertifikat_mkw
+                  : certificate.jumlah_sertifikat_kbp,
+              dest_medals:
+                destBranch === "mkw"
+                  ? certificate.jumlah_medali_mkw
+                  : certificate.jumlah_medali_kbp,
+            }),
+            JSON.stringify({
+              snd_certs: newSndCert,
+              snd_medals: newSndMedal,
+              dest_certs: newDestCert,
+              dest_medals: newDestMedal,
+            }),
+            req.user?.username || "System",
+          ],
+        );
 
-    logger.info(
-      `Migration successful: ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
-    );
+        await client.query("COMMIT");
 
-    return sendSuccess(
-      res,
-      `Successfully migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
-      result.rows[0],
-      {
-        migration: {
-          certificate_id: cleanId,
-          from: "snd",
-          to: destBranch,
-          certificates: {
-            amount: certAmount,
-            previous_snd: certificate.jumlah_sertifikat_snd,
-            new_snd: newSndCert,
-            previous_dest:
-              destBranch === "mkw"
-                ? certificate.jumlah_sertifikat_mkw
-                : certificate.jumlah_sertifikat_kbp,
-            new_dest: newDestCert,
+        logger.info(
+          `Migration successful: ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
+        );
+
+        return sendSuccess(
+          res,
+          `Successfully migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
+          result.rows[0],
+          {
+            migration: {
+              certificate_id: cleanId,
+              from: "snd",
+              to: destBranch,
+              certificates: {
+                amount: certAmount,
+                previous_snd: certificate.jumlah_sertifikat_snd,
+                new_snd: newSndCert,
+                previous_dest:
+                  destBranch === "mkw"
+                    ? certificate.jumlah_sertifikat_mkw
+                    : certificate.jumlah_sertifikat_kbp,
+                new_dest: newDestCert,
+              },
+              medals: {
+                amount: medalAmountValue,
+                previous_snd: certificate.jumlah_medali_snd,
+                new_snd: newSndMedal,
+                previous_dest:
+                  destBranch === "mkw"
+                    ? certificate.jumlah_medali_mkw
+                    : certificate.jumlah_medali_kbp,
+                new_dest: newDestMedal,
+              },
+            },
           },
-          medals: {
-            amount: medalAmountValue,
-            previous_snd: certificate.jumlah_medali_snd,
-            new_snd: newSndMedal,
-            previous_dest:
-              destBranch === "mkw"
-                ? certificate.jumlah_medali_mkw
-                : certificate.jumlah_medali_kbp,
-            new_dest: newDestMedal,
-          },
-        },
-      },
-    );
+        );
+
+        // ✅ ADD: Break loop on success
+        break;
+      } catch (error) {
+        await client.query("ROLLBACK");
+
+        // ✅ ADD: Retry logic untuk lock errors
+        if (error.code === "55P03" && retryCount < MAX_RETRIES - 1) {
+          // 55P03 = lock_not_available
+          retryCount++;
+          logger.warn(
+            `Lock not available, retry attempt ${retryCount}/${MAX_RETRIES}`,
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, 100 * Math.pow(2, retryCount)),
+          );
+          continue;
+        }
+
+        // ✅ ADD: Re-throw if not lock error or max retries reached
+        throw error;
+      }
+    }
   } catch (error) {
-    await client.query("ROLLBACK");
     return sendError(
       res,
       CONSTANTS.HTTP_STATUS.SERVER_ERROR,
