@@ -411,139 +411,115 @@ const clearAllCertificates = async (req, res) => {
 // =====================================================
 // 7. MIGRATE CERTIFICATE
 // =====================================================
-// =====================================================
-// 7. MIGRATE CERTIFICATE - WITH RETRY LOGIC
-// =====================================================
 const migrateCertificate = async (req, res) => {
-  const client = await pool.connect();
+  // ✅ STEP 1: Validate OUTSIDE transaction
+  const {
+    certificate_id: certificateId,
+    destination_branch: destinationBranch,
+    certificate_amount: certificateAmount,
+    medal_amount: medalAmount,
+  } = req.body;
 
-  // ✅ ADD: Retry logic dengan exponential backoff
+  const idValidation = validators.validateCertificateId(certificateId);
+  if (!idValidation.valid) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      idValidation.error,
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  if (!destinationBranch || !destinationBranch.trim()) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Destination branch is required",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  const destBranch = destinationBranch.trim().toLowerCase();
+  if (destBranch !== "mkw" && destBranch !== "kbp") {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Invalid destination branch",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  const certValidation = validators.validatePositiveInteger(
+    certificateAmount || 0,
+    "Certificate amount",
+  );
+  if (!certValidation.valid) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      certValidation.error,
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  const medalValidation = validators.validatePositiveInteger(
+    medalAmount || 0,
+    "Medal amount",
+  );
+  if (!medalValidation.valid) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      medalValidation.error,
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  const certAmount = certValidation.value;
+  const medalAmountValue = medalValidation.value;
+  const cleanId = idValidation.value;
+
+  if (certAmount <= 0 && medalAmountValue <= 0) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "At least one amount must be > 0",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  const client = await pool.connect();
   const MAX_RETRIES = 3;
-  let retryCount = 0;
 
   try {
-    while (retryCount < MAX_RETRIES) {
+    for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
       try {
         await client.query("BEGIN");
         await client.query(
           `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
         );
-
-        // ✅ ADD: Lock timeout untuk avoid deadlock
         await client.query("SET LOCAL lock_timeout = '2s'");
 
-        logger.info("Migrate request:", req.body);
-
-        const {
-          certificate_id: certificateId,
-          destination_branch: destinationBranch,
-          certificate_amount: certificateAmount,
-          medal_amount: medalAmount,
-        } = req.body;
-
-        // Validate certificate_id
-        const idValidation = validators.validateCertificateId(certificateId);
-        if (!idValidation.valid) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            idValidation.error,
-            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-          );
-        }
-
-        const cleanId = idValidation.value;
-
-        // Validate destination branch
-        if (!destinationBranch || !destinationBranch.trim()) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            "Destination branch is required",
-            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-          );
-        }
-
-        const destBranch = destinationBranch.trim().toLowerCase();
-        if (destBranch !== "mkw" && destBranch !== "kbp") {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            "Invalid destination branch. Must be 'mkw' or 'kbp'",
-            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-          );
-        }
-
-        // Validate amounts
-        const certValidation = validators.validatePositiveInteger(
-          certificateAmount || 0,
-          "Certificate amount",
+        logger.info(
+          `Migration attempt ${retryCount + 1}/${MAX_RETRIES} for ${cleanId}`,
         );
-        if (!certValidation.valid) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            certValidation.error,
-            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-          );
-        }
-        const certAmount = certValidation.value;
 
-        const medalValidation = validators.validatePositiveInteger(
-          medalAmount || 0,
-          "Medal amount",
-        );
-        if (!medalValidation.valid) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            medalValidation.error,
-            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-          );
-        }
-        const medalAmountValue = medalValidation.value;
-
-        if (certAmount <= 0 && medalAmountValue <= 0) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            "At least one amount (certificates or medals) must be greater than 0",
-            CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-          );
-        }
-
-        // ✅ MODIFIED: Get certificate with lock NOWAIT
+        // Get certificate with lock
         const certResult = await client.query(
           "SELECT * FROM certificates WHERE certificate_id = $1 FOR UPDATE NOWAIT",
           [cleanId],
         );
 
         if (certResult.rows.length === 0) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.NOT_FOUND,
-            "Certificate not found",
-            CONSTANTS.ERROR_CODES.NOT_FOUND,
-          );
+          throw new Error("Certificate not found");
         }
 
         const certificate = certResult.rows[0];
 
-        // Check stock
+        // Check stock availability
         if (certAmount > 0 && certificate.jumlah_sertifikat_snd < certAmount) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            `Insufficient SND certificate stock in this batch. Available: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
-            CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
+          throw new Error(
+            `Insufficient certificate stock. Available: ${certificate.jumlah_sertifikat_snd}, Requested: ${certAmount}`,
           );
         }
 
@@ -551,12 +527,8 @@ const migrateCertificate = async (req, res) => {
           medalAmountValue > 0 &&
           certificate.jumlah_medali_snd < medalAmountValue
         ) {
-          await client.query("ROLLBACK");
-          return sendError(
-            res,
-            CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-            `Insufficient SND medal stock in this batch. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmountValue}`,
-            CONSTANTS.ERROR_CODES.INSUFFICIENT_STOCK,
+          throw new Error(
+            `Insufficient medal stock. Available: ${certificate.jumlah_medali_snd}, Requested: ${medalAmountValue}`,
           );
         }
 
@@ -573,7 +545,7 @@ const migrateCertificate = async (req, res) => {
           newDestMedal = certificate.jumlah_medali_kbp + medalAmountValue;
         }
 
-        // Update
+        // Update certificate
         const destCertField =
           destBranch === "mkw"
             ? "jumlah_sertifikat_mkw"
@@ -614,7 +586,7 @@ const migrateCertificate = async (req, res) => {
           [
             cleanId,
             CONSTANTS.LOG_ACTION_TYPES.MIGRATE,
-            `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()} (Batch: ${cleanId})`,
+            `Migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
             "snd",
             destBranch,
             certAmount,
@@ -649,7 +621,7 @@ const migrateCertificate = async (req, res) => {
 
         return sendSuccess(
           res,
-          `Successfully migrated ${migrationItems.join(" and ")} from SND to ${destBranch.toUpperCase()}`,
+          `Successfully migrated ${migrationItems.join(" and ")}`,
           result.rows[0],
           {
             migration: {
@@ -679,18 +651,13 @@ const migrateCertificate = async (req, res) => {
             },
           },
         );
-
-        // ✅ ADD: Break loop on success
-        break;
       } catch (error) {
         await client.query("ROLLBACK");
 
-        // ✅ ADD: Retry logic untuk lock errors
+        // Retry on lock errors
         if (error.code === "55P03" && retryCount < MAX_RETRIES - 1) {
-          // 55P03 = lock_not_available
-          retryCount++;
           logger.warn(
-            `Lock not available, retry attempt ${retryCount}/${MAX_RETRIES}`,
+            `Lock conflict, retrying (${retryCount + 1}/${MAX_RETRIES})...`,
           );
           await new Promise((resolve) =>
             setTimeout(resolve, 100 * Math.pow(2, retryCount)),
@@ -698,7 +665,7 @@ const migrateCertificate = async (req, res) => {
           continue;
         }
 
-        // ✅ ADD: Re-throw if not lock error or max retries reached
+        // Re-throw other errors
         throw error;
       }
     }

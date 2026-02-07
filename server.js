@@ -2,6 +2,7 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const logger = require("./utils/logger");
+const requestTimeout = require("./middleware/timeout");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
@@ -20,6 +21,11 @@ const app = express();
 
 // Helmet - Security headers
 app.use(helmet());
+
+// =====================================================
+// REQUEST TIMEOUT MIDDLEWARE (30 seconds)
+// =====================================================
+app.use(requestTimeout(30000)); // 30 seconds global timeout
 
 // =====================================================
 // CORS CONFIGURATION
@@ -65,8 +71,29 @@ app.use(cors(corsOptions));
 // BODY PARSING MIDDLEWARE (with size limits)
 // =====================================================
 
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+app.use(
+  express.json({
+    limit: "2mb",
+    verify: (req, res, buf, encoding) => {
+      // Additional size check for security
+      if (buf.length > 2 * 1024 * 1024) {
+        throw new Error("Request entity too large");
+      }
+    },
+  }),
+);
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "2mb",
+    verify: (req, res, buf, encoding) => {
+      if (buf.length > 2 * 1024 * 1024) {
+        throw new Error("Request entity too large");
+      }
+    },
+  }),
+);
 
 // =====================================================
 // REQUEST LOGGING MIDDLEWARE
@@ -123,6 +150,44 @@ app.get("/health", (req, res) => {
 // =====================================================
 // ERROR HANDLING
 // =====================================================
+
+// Body-parser error handler (must be BEFORE 404 handler)
+app.use((err, req, res, next) => {
+  // Handle body-parser errors
+  if (
+    err.type === "entity.too.large" ||
+    err.message === "Request entity too large"
+  ) {
+    logger.warn(`Request too large: ${req.method} ${req.path}`, {
+      ip: req.ip,
+      size: req.headers["content-length"],
+    });
+
+    return res.status(413).json({
+      success: false,
+      message: "Request body too large. Maximum size is 2MB.",
+      errorCode: "PAYLOAD_TOO_LARGE",
+      maxSize: "2MB",
+    });
+  }
+
+  // Handle JSON parse errors
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    logger.warn(`Invalid JSON: ${req.method} ${req.path}`, {
+      ip: req.ip,
+      error: err.message,
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON in request body",
+      errorCode: "INVALID_JSON",
+    });
+  }
+
+  // Pass to next error handler
+  next(err);
+});
 
 // 404 Handler
 app.use((req, res) => {
