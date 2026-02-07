@@ -142,12 +142,9 @@ app.get("/", (req, res) => {
     environment: process.env.NODE_ENV || "development",
     endpoints: {
       auth: "/api/auth",
-      refreshToken: "/api/auth/refresh-token",
       certificates: "/api/certificates",
-      summary: "/api/certificates/summary",
-      history: "/api/certificates/history",
-      migrate: "/api/certificates/migrate",
       logs: "/api/logs",
+      users: "/api/users",
       teachers: "/api/teachers",
       modules: "/api/modules",
       printedCertificates: "/api/printed-certificates",

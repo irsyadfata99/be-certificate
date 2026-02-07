@@ -19,12 +19,6 @@ module.exports = {
     DEFAULT_GENERATED_LENGTH: 12,
   },
 
-  // JWT settings
-  JWT: {
-    EXPIRES_IN: "24h",
-    ALGORITHM: "HS256",
-  },
-
   // Age range for modules
   AGE_RANGE: {
     MIN: 3,
