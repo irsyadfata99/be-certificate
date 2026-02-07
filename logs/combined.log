@@ -22,3 +22,15 @@
 {"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-07 07:42:16"}
 {"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-07 07:42:16"}
 {"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-07 07:49:11"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-07 07:56:30"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-07 07:56:48"}

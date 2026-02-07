@@ -1,7 +1,7 @@
 // routes/authRoutes.js
 const express = require("express");
 const router = express.Router();
-const { login } = require("../auth/AuthController");
+const { login, refreshToken } = require("../auth/AuthController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
 // =====================================================
@@ -10,6 +10,9 @@ const { verifyToken } = require("../auth/AuthMiddleware");
 
 // Login endpoint
 router.post("/login", login);
+
+// Refresh token endpoint
+router.post("/refresh-token", refreshToken);
 
 // =====================================================
 // PROTECTED ROUTES

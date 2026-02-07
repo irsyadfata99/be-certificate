@@ -1,6 +1,4 @@
 // routes/printedCertificates.js
-// Certificate Print API Routes - PRODUCTION READY
-
 const express = require("express");
 const router = express.Router();
 const pool = require("../config/database");
@@ -11,6 +9,8 @@ const {
 } = require("../auth/AuthMiddleware");
 const logger = require("../utils/logger");
 const CONSTANTS = require("../utils/constants");
+const validators = require("../utils/validators");
+const { sendError, sendSuccess } = require("../utils/responseHelper");
 
 // =====================================================
 // ALL ROUTES REQUIRE AUTHENTICATION
@@ -28,17 +28,15 @@ router.get("/modules", verifyToken, async (req, res) => {
        ORDER BY division, module_code`,
     );
 
-    res.json({
-      success: true,
-      modules: result.rows,
-    });
+    return sendSuccess(res, "Modules retrieved successfully", result.rows);
   } catch (error) {
-    logger.error("Error fetching modules:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Failed to fetch modules",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-    });
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to fetch modules",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 });
 
@@ -55,59 +53,86 @@ router.post("/", verifyToken, async (req, res) => {
   } = req.body;
 
   const userId = req.user.id;
-  const userBranch = req.user.teacher_branch; // From JWT token
+  const userBranch = req.user.teacher_branch;
 
   // Validation
   if (!certificateId || !studentName || !moduleId || !ptcDate) {
-    return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message:
-        "All fields are required: certificateId, studentName, moduleId, ptcDate",
-      errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-    });
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "All fields are required: certificateId, studentName, moduleId, ptcDate",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
   }
 
-  // Validate certificate ID not empty
-  if (certificateId.trim() === "") {
-    return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: "Certificate ID cannot be empty",
-      errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-    });
+  // Validate certificate ID
+  const certIdValidation = validators.validateCertificateId(certificateId);
+  if (!certIdValidation.valid) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      certIdValidation.error,
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
   }
 
-  // Validate student name not empty
-  if (studentName.trim() === "") {
-    return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: "Student name cannot be empty",
-      errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-    });
+  // Validate student name
+  if (!studentName || !studentName.trim()) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Student name cannot be empty",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  const cleanStudentName = validators.sanitizeString(studentName.trim());
+
+  if (cleanStudentName.length < 3) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Student name must be at least 3 characters",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
+  // Validate module ID
+  const moduleIdNum = parseInt(moduleId);
+  if (isNaN(moduleIdNum)) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Invalid module ID",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
   }
 
   // Validate date format
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(ptcDate)) {
-    return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: "Invalid date format. Use YYYY-MM-DD",
-      errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-    });
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Invalid date format. Use YYYY-MM-DD",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
   }
 
   try {
     // Verify module exists
     const moduleCheck = await pool.query(
       "SELECT id, module_code, module_name, division FROM modules WHERE id = $1",
-      [moduleId],
+      [moduleIdNum],
     );
 
     if (moduleCheck.rows.length === 0) {
-      return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
-        success: false,
-        message: "Module not found",
-        errorCode: CONSTANTS.ERROR_CODES.NOT_FOUND,
-      });
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Module not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     // Insert printed certificate record
@@ -117,9 +142,9 @@ router.post("/", verifyToken, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, certificate_id, student_name, module_id, ptc_date, printed_at, branch`,
       [
-        certificateId.trim(),
-        studentName.trim(),
-        moduleId,
+        certIdValidation.value,
+        cleanStudentName,
+        moduleIdNum,
         ptcDate,
         userId,
         userBranch,
@@ -127,35 +152,30 @@ router.post("/", verifyToken, async (req, res) => {
     );
 
     const savedRecord = result.rows[0];
-
-    // Get module details for response
     const moduleDetails = moduleCheck.rows[0];
 
-    res.status(CONSTANTS.HTTP_STATUS.CREATED).json({
-      success: true,
-      message: "Certificate print record saved successfully",
-      data: {
-        id: savedRecord.id,
-        certificateId: savedRecord.certificate_id,
-        studentName: savedRecord.student_name,
-        module: {
-          id: moduleDetails.id,
-          code: moduleDetails.module_code,
-          name: moduleDetails.module_name,
-          division: moduleDetails.division,
-        },
-        ptcDate: savedRecord.ptc_date,
-        printedAt: savedRecord.printed_at,
-        branch: savedRecord.branch,
+    return sendSuccess(res, "Certificate print record saved successfully", {
+      id: savedRecord.id,
+      certificateId: savedRecord.certificate_id,
+      studentName: savedRecord.student_name,
+      module: {
+        id: moduleDetails.id,
+        code: moduleDetails.module_code,
+        name: moduleDetails.module_name,
+        division: moduleDetails.division,
       },
+      ptcDate: savedRecord.ptc_date,
+      printedAt: savedRecord.printed_at,
+      branch: savedRecord.branch,
     });
   } catch (error) {
-    logger.error("Error saving printed certificate:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Failed to save certificate print record",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-    });
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to save certificate print record",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 });
 
@@ -190,36 +210,38 @@ router.get("/history", verifyToken, async (req, res) => {
       queryParams.push(userId);
       paramCount++;
     } else {
-      // Admin sees all in their branch
       whereConditions.push(`pc.branch = $${paramCount}`);
       queryParams.push(userBranch);
       paramCount++;
     }
 
-    // Search filter (student name or certificate ID)
-    if (search) {
+    // Search filter
+    if (search && search.trim()) {
       whereConditions.push(
         `(LOWER(pc.student_name) LIKE LOWER($${paramCount}) OR LOWER(pc.certificate_id) LIKE LOWER($${paramCount}))`,
       );
-      queryParams.push(`%${search}%`);
+      queryParams.push(`%${search.trim()}%`);
       paramCount++;
     }
 
     // Module filter
     if (moduleId) {
-      whereConditions.push(`pc.module_id = $${paramCount}`);
-      queryParams.push(moduleId);
-      paramCount++;
+      const moduleIdNum = parseInt(moduleId);
+      if (!isNaN(moduleIdNum)) {
+        whereConditions.push(`pc.module_id = $${paramCount}`);
+        queryParams.push(moduleIdNum);
+        paramCount++;
+      }
     }
 
     // Date range filter
-    if (startDate) {
+    if (startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
       whereConditions.push(`pc.ptc_date >= $${paramCount}`);
       queryParams.push(startDate);
       paramCount++;
     }
 
-    if (endDate) {
+    if (endDate && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
       whereConditions.push(`pc.ptc_date <= $${paramCount}`);
       queryParams.push(endDate);
       paramCount++;
@@ -239,7 +261,7 @@ router.get("/history", verifyToken, async (req, res) => {
     const countResult = await pool.query(countQuery, queryParams);
     const totalRecords = parseInt(countResult.rows[0].total);
 
-    // Get paginated data with joins
+    // Get paginated data
     const dataQuery = `
       SELECT 
         pc.id,
@@ -264,23 +286,27 @@ router.get("/history", verifyToken, async (req, res) => {
     queryParams.push(limit, offset);
     const dataResult = await pool.query(dataQuery, queryParams);
 
-    res.json({
-      success: true,
-      data: dataResult.rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalRecords / limit),
-        totalRecords: totalRecords,
-        recordsPerPage: parseInt(limit),
+    return sendSuccess(
+      res,
+      "Certificate history retrieved successfully",
+      dataResult.rows,
+      {
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalRecords / limit),
+          totalRecords: totalRecords,
+          recordsPerPage: parseInt(limit),
+        },
       },
-    });
+    );
   } catch (error) {
-    logger.error("Error fetching printed certificates history:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Failed to fetch certificate history",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-    });
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to fetch certificate history",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 });
 
@@ -294,11 +320,20 @@ router.get("/:id", verifyToken, async (req, res) => {
   const userRole = req.user.role;
   const userBranch = req.user.teacher_branch;
 
+  const recordId = parseInt(id);
+  if (isNaN(recordId)) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+      "Invalid certificate record ID",
+      CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+    );
+  }
+
   try {
     let query, queryParams;
 
     if (userRole === "teacher") {
-      // Teachers can only access their own prints
       query = `
         SELECT 
           pc.id,
@@ -315,9 +350,8 @@ router.get("/:id", verifyToken, async (req, res) => {
         JOIN modules m ON pc.module_id = m.id
         WHERE pc.id = $1 AND pc.printed_by = $2
       `;
-      queryParams = [id, userId];
+      queryParams = [recordId, userId];
     } else {
-      // Admins can access all in their branch
       query = `
         SELECT 
           pc.id,
@@ -336,30 +370,33 @@ router.get("/:id", verifyToken, async (req, res) => {
         JOIN users u ON pc.printed_by = u.id
         WHERE pc.id = $1 AND pc.branch = $2
       `;
-      queryParams = [id, userBranch];
+      queryParams = [recordId, userBranch];
     }
 
     const result = await pool.query(query, queryParams);
 
     if (result.rows.length === 0) {
-      return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
-        success: false,
-        message: "Certificate record not found or access denied",
-        errorCode: CONSTANTS.ERROR_CODES.NOT_FOUND,
-      });
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Certificate record not found or access denied",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
-    res.json({
-      success: true,
-      data: result.rows[0],
-    });
+    return sendSuccess(
+      res,
+      "Certificate details retrieved successfully",
+      result.rows[0],
+    );
   } catch (error) {
-    logger.error("Error fetching certificate details:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Failed to fetch certificate details",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-    });
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to fetch certificate details",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 });
 

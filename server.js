@@ -3,7 +3,24 @@ const helmet = require("helmet");
 const cors = require("cors");
 const logger = require("./utils/logger");
 const requestTimeout = require("./middleware/timeout");
+const {
+  validateEnvironment,
+  getEnvironmentInfo,
+} = require("./utils/envValidator");
 require("dotenv").config();
+
+// =====================================================
+// VALIDATE ENVIRONMENT BEFORE STARTING
+// =====================================================
+try {
+  validateEnvironment();
+} catch (error) {
+  console.error("❌ Environment validation failed:", error.message);
+  console.error(
+    "💡 Please check your .env file and ensure all required variables are set",
+  );
+  process.exit(1);
+}
 
 const authRoutes = require("./routes/authRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
@@ -25,7 +42,7 @@ app.use(helmet());
 // =====================================================
 // REQUEST TIMEOUT MIDDLEWARE (30 seconds)
 // =====================================================
-app.use(requestTimeout(30000)); // 30 seconds global timeout
+app.use(requestTimeout(30000));
 
 // =====================================================
 // CORS CONFIGURATION
@@ -42,7 +59,6 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -75,7 +91,6 @@ app.use(
   express.json({
     limit: "2mb",
     verify: (req, res, buf, encoding) => {
-      // Additional size check for security
       if (buf.length > 2 * 1024 * 1024) {
         throw new Error("Request entity too large");
       }
@@ -123,10 +138,11 @@ app.use("/api/printed-certificates", printedCertificatesRoutes);
 app.get("/", (req, res) => {
   res.json({
     message: "Certificate Management API is running",
-    version: "2.3.0",
+    version: "2.4.0",
     environment: process.env.NODE_ENV || "development",
     endpoints: {
       auth: "/api/auth",
+      refreshToken: "/api/auth/refresh-token",
       certificates: "/api/certificates",
       summary: "/api/certificates/summary",
       history: "/api/certificates/history",
@@ -144,6 +160,7 @@ app.get("/health", (req, res) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    environment: getEnvironmentInfo(),
   });
 });
 
@@ -151,9 +168,8 @@ app.get("/health", (req, res) => {
 // ERROR HANDLING
 // =====================================================
 
-// Body-parser error handler (must be BEFORE 404 handler)
+// Body-parser error handler
 app.use((err, req, res, next) => {
-  // Handle body-parser errors
   if (
     err.type === "entity.too.large" ||
     err.message === "Request entity too large"
@@ -171,7 +187,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Handle JSON parse errors
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     logger.warn(`Invalid JSON: ${req.method} ${req.path}`, {
       ip: req.ip,
@@ -185,7 +200,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Pass to next error handler
   next(err);
 });
 
@@ -202,7 +216,6 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   logger.error("Server Error:", err);
 
-  // CORS error
   if (err.message === "Not allowed by CORS") {
     return res.status(403).json({
       success: false,
@@ -210,7 +223,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Default error
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
@@ -225,15 +237,19 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
+  const envInfo = getEnvironmentInfo();
   logger.info("=".repeat(50));
   logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
+  logger.info(`📝 Environment: ${envInfo.nodeEnv}`);
   logger.info(`🔗 API: http://localhost:${PORT}`);
   logger.info(`📊 Summary: http://localhost:${PORT}/api/certificates/summary`);
   logger.info(`👥 Teachers: http://localhost:${PORT}/api/teachers`);
   logger.info(`📚 Modules: http://localhost:${PORT}/api/modules`);
   logger.info(
     `📜 Printed Certificates: http://localhost:${PORT}/api/printed-certificates`,
+  );
+  logger.info(
+    `🔄 Refresh Token: http://localhost:${PORT}/api/auth/refresh-token`,
   );
   logger.info("=".repeat(50));
 });

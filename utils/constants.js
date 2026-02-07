@@ -45,6 +45,12 @@ module.exports = {
     VALID_PATTERN: /^[A-Za-z0-9_]+$/,
   },
 
+  JWT: {
+    ACCESS_TOKEN_EXPIRES_IN: "1h",
+    REFRESH_TOKEN_EXPIRES_IN: "7d",
+    ALGORITHM: "HS256",
+  },
+
   // Teacher name validation
   TEACHER_NAME: {
     MIN_LENGTH: 3,
