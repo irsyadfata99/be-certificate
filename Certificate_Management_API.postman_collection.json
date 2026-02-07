@@ -1,0 +1,1282 @@
+{
+  "info": {
+    "name": "Certificate Management API",
+    "description": "Complete API testing collection for Certificate Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "certificateId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "teacherId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "moduleId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. AUTHENTICATION",
+      "item": [
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+                  "    pm.test('Login successful', function() {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"gulam\",\n  \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.test('Teacher login successful', function() {",
+                  "        pm.expect(jsonData.data.user.role).to.eql('teacher');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"evaherl\",\n  \"password\": \"admin123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Invalid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"gulam\",\n  \"password\": \"wrongpassword\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.test('Token refreshed', function() {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh-token"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile retrieved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. CERTIFICATES",
+      "item": [
+        {
+          "name": "Create Certificate Batch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('certificateId', jsonData.data.certificate_id);",
+                  "    pm.test('Certificate created', function() {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"BATCH-TEST-001\",\n  \"jumlah_sertifikat_kbp\": 50,\n  \"jumlah_medali_kbp\": 50,\n  \"jumlah_sertifikat_snd\": 100,\n  \"jumlah_medali_snd\": 100,\n  \"jumlah_sertifikat_mkw\": 0,\n  \"jumlah_medali_mkw\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Get All Certificates (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Certificates list retrieved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.meta.pagination).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Certificate by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Certificate details retrieved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/{{certificateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "{{certificateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Stock Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Stock summary retrieved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.total_stock).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Migrate Certificate (SND to MKW)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Migration successful', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"{{certificateId}}\",\n  \"destination_branch\": \"mkw\",\n  \"certificate_amount\": 10,\n  \"medal_amount\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/migrate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "migrate"]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('History retrieved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/history?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Certificate (Should Fail - Disabled)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 403 Forbidden', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jumlah_sertifikat_snd\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/{{certificateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "{{certificateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Certificate (Should Fail - Disabled)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 403 Forbidden', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/{{certificateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "{{certificateId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. TEACHERS (Admin Only)",
+      "item": [
+        {
+          "name": "Create Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('teacherId', jsonData.data.id);",
+                  "    pm.test('Teacher created', function() {",
+                  "        pm.expect(jsonData.data.generatedPassword).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testteacher\",\n  \"teacher_name\": \"Test Teacher\",\n  \"teacher_division\": \"JK\",\n  \"teacher_branch\": \"SND\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers"]
+            }
+          }
+        },
+        {
+          "name": "Get All Teachers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Teachers list retrieved', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Teacher by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "{{teacherId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Teacher",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacher_name\": \"Updated Teacher Name\",\n  \"teacher_division\": \"LK\",\n  \"new_password\": \"newpass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "{{teacherId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Teacher",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "{{teacherId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. MODULES (Admin Only)",
+      "item": [
+        {
+          "name": "Create Module",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('moduleId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module_code\": \"TEST-MOD-001\",\n  \"module_name\": \"Test Module for API\",\n  \"division\": \"JK\",\n  \"min_age\": 5,\n  \"max_age\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modules",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules"]
+            }
+          }
+        },
+        {
+          "name": "Get All Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modules?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Modules by Division",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modules?division=JK",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules"],
+              "query": [
+                {
+                  "key": "division",
+                  "value": "JK"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modules?search=python",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "python"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Module by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modules/{{moduleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules", "{{moduleId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Module Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modules/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Update Module",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module_code\": \"TEST-MOD-001\",\n  \"module_name\": \"Updated Test Module\",\n  \"division\": \"LK\",\n  \"min_age\": 8,\n  \"max_age\": 12\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modules/{{moduleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules", "{{moduleId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Module",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/modules/{{moduleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modules", "{{moduleId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. PRINTED CERTIFICATES",
+      "item": [
+        {
+          "name": "Get Modules for Dropdown",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/printed-certificates/modules",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "printed-certificates", "modules"]
+            }
+          }
+        },
+        {
+          "name": "Save Print Record",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"{{certificateId}}\",\n  \"student_name\": \"John Doe\",\n  \"module_id\": 1,\n  \"ptc_date\": \"2026-02-08\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/printed-certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "printed-certificates"]
+            }
+          }
+        },
+        {
+          "name": "Get Print History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/printed-certificates/history?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "printed-certificates", "history"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Print History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/printed-certificates/history?search=john&start_date=2026-01-01&end_date=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "printed-certificates", "history"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "john"
+                },
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. LOGS",
+      "item": [
+        {
+          "name": "Get All Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logs?limit=100&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs by Certificate ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logs/certificate/{{certificateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logs", "certificate", "{{certificateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Filter Logs by Action Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logs?action_type=MIGRATE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logs"],
+              "query": [
+                {
+                  "key": "action_type",
+                  "value": "MIGRATE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Logs by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logs?from_date=2026-01-01&to_date=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logs"],
+              "query": [
+                {
+                  "key": "from_date",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. USER PROFILE",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Username",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_username\": \"newusername\",\n  \"current_password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/username",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "username"]
+            }
+          }
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"admin123\",\n  \"new_password\": \"newpass123\",\n  \"confirm_password\": \"newpass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. EXPORT (Admin Only)",
+      "item": [
+        {
+          "name": "Export All Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "all"]
+            }
+          }
+        },
+        {
+          "name": "Export Certificates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Export Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "logs"]
+            }
+          }
+        },
+        {
+          "name": "Export Teachers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/teachers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "teachers"]
+            }
+          }
+        },
+        {
+          "name": "Export Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/modules",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "modules"]
+            }
+          }
+        },
+        {
+          "name": "Export Printed Certificates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/printed-certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "printed-certificates"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. VALIDATION TESTS",
+      "item": [
+        {
+          "name": "Invalid Certificate ID Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"invalid@#$%\",\n  \"jumlah_sertifikat_snd\": 100,\n  \"jumlah_medali_snd\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Negative Stock Values",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"TEST-NEGATIVE\",\n  \"jumlah_sertifikat_snd\": -10,\n  \"jumlah_medali_snd\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Insufficient Stock Migration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return error', function() {",
+                  "    pm.response.to.have.status(500);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"{{certificateId}}\",\n  \"destination_branch\": \"mkw\",\n  \"certificate_amount\": 999999,\n  \"medal_amount\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/migrate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "migrate"]
+            }
+          }
+        },
+        {
+          "name": "Weak Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"admin123\",\n  \"new_password\": \"123\",\n  \"confirm_password\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. ERROR HANDLING",
+      "item": [
+        {
+          "name": "404 - Endpoint Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 404', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/nonexistent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "nonexistent"]
+            }
+          }
+        },
+        {
+          "name": "401 - Unauthorized (No Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Invalid JSON Body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{invalid json}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -49,3 +49,156 @@
 {"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-07 19:36:57"}
 {"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-07 19:36:57"}
 {"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-07 19:36:58"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-07 22:39:10"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-07 22:39:11"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-08 04:53:41"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-08 04:53:42"}
+{"level":"info","message":"POST /auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:14:56"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:27:05"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-08 06:27:05"}
+{"level":"info","message":"Successful login: gulam (admin)","service":"certificate-management-api","timestamp":"2026-02-08 06:27:05"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:27:18"}
+{"level":"warn","message":"Failed password attempt for user: evaherl","service":"certificate-management-api","timestamp":"2026-02-08 06:27:18"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:18"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:27:33"}
+{"level":"warn","message":"Failed password attempt for user: gulam","service":"certificate-management-api","timestamp":"2026-02-08 06:27:33"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:33"}
+{"level":"info","message":"POST /api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-08 06:27:40"}
+{"level":"error","message":"Error (400): Refresh token is required","service":"certificate-management-api","timestamp":"2026-02-08 06:27:40"}
+{"level":"info","message":"GET /api/auth/profile","service":"certificate-management-api","timestamp":"2026-02-08 06:27:45"}
+{"level":"warn","message":"Access attempt without token","service":"certificate-management-api","timestamp":"2026-02-08 06:27:45"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"Successful login: gulam (admin)","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"warn","message":"Failed password attempt for user: evaherl","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"warn","message":"Failed password attempt for user: gulam","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"POST /api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"Token refreshed for user: gulam","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"GET /api/auth/profile","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"certificate_id":"BATCH-TEST-001","jumlah_medali_kbp":50,"jumlah_medali_mkw":0,"jumlah_medali_snd":100,"jumlah_sertifikat_kbp":50,"jumlah_sertifikat_mkw":0,"jumlah_sertifikat_snd":100,"level":"info","message":"Create certificate request:","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"certificate_id":"BATCH-TEST-001","created_at":"2026-02-07T23:27:57.904Z","id":5,"jumlah_medali_kbp":50,"jumlah_medali_mkw":0,"jumlah_medali_snd":100,"jumlah_sertifikat_kbp":50,"jumlah_sertifikat_mkw":0,"jumlah_sertifikat_snd":100,"level":"info","medali_awal_kbp":50,"medali_awal_mkw":0,"medali_awal_snd":100,"message":"Certificate created:","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57","updated_at":"2026-02-07T23:27:57.904Z"}
+{"level":"info","message":"Log created: CREATE - BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"Get certificates: limit=10, offset=0","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"Returned 3/3 certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"info","message":"GET /api/certificates/BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"POST /api/certificates/migrate","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Migration attempt 1/3 for BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Migration successful: 10 certificate(s) and 10 medal(s) from SND to MKW","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"GET /api/certificates/history","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","limit":"50","message":"Fetching transaction history:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Transaction history retrieved: 3/3 records","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"PUT /api/certificates/BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"error","message":"Error (403): Update operation is not allowed. Please create a new batch for adjustments or use migration feature.","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"DELETE /api/certificates/BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"error","message":"Error (403): Delete operation is not allowed. Batches are permanent records for audit purposes.","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"POST /api/teachers","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Create teacher request:","service":"certificate-management-api","teacher_branch":"SND","teacher_division":"JK","teacher_name":"Test Teacher","timestamp":"2026-02-08 06:27:58","username":"testteacher"}
+{"level":"info","message":"Generated password for new teacher","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"created_at":"2026-02-07T23:27:58.631Z","id":5,"level":"info","message":"Teacher created:","service":"certificate-management-api","teacher_branch":"SND","teacher_division":"JK","teacher_name":"Test Teacher","timestamp":"2026-02-08 06:27:58","username":"testteacher"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Get teachers: limit=10, offset=0","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"Returned 4/4 teachers","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"GET /api/teachers/5","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"info","message":"PUT /api/teachers/5","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"id":5,"level":"info","message":"Update teacher request:","new_password":"newpass123","service":"certificate-management-api","teacher_division":"LK","teacher_name":"Updated Teacher Name","timestamp":"2026-02-08 06:27:58"}
+{"created_at":"2026-02-07T23:27:58.631Z","id":5,"level":"info","message":"Teacher updated:","service":"certificate-management-api","teacher_branch":"SND","teacher_division":"LK","teacher_name":"Updated Teacher Name","timestamp":"2026-02-08 06:27:59","updated_at":"2026-02-07T23:27:58.955Z","username":"testteacher"}
+{"level":"info","message":"DELETE /api/teachers/5","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Delete teacher request:","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"0":"t","1":"e","10":"r","2":"s","3":"t","4":"t","5":"e","6":"a","7":"c","8":"h","9":"e","level":"info","message":"Teacher deleted:","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"POST /api/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Module created: TEST-MOD-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Returned 6/6 modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Returned 2/2 modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Returned 0/0 modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/modules/10","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/modules/stats","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"PUT /api/modules/10","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Module updated: TEST-MOD-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"DELETE /api/modules/10","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"Module deleted: TEST-MOD-001","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/printed-certificates/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"POST /api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"error","message":"Error (404): Module not found","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"info","message":"GET /api/printed-certificates/history","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"GET /api/printed-certificates/history","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","limit":"100","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"GET /api/logs/certificate/BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"action_type":"MIGRATE","level":"info","message":"Fetching logs with filters:","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"from_date":"2026-01-01","level":"info","message":"Fetching logs with filters:","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00","to_date":"2026-12-31"}
+{"level":"info","message":"GET /api/users/profile","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"PUT /api/users/username","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"Username updated: gulam → newusername","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"PUT /api/users/password","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"Password updated successfully for user: newusername","service":"certificate-management-api","timestamp":"2026-02-08 06:28:00"}
+{"level":"info","message":"GET /api/export/all","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Exporting all data to Excel (multi-sheet)","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"All data exported successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"GET /api/export/certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Exporting certificates to Excel","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Certificates exported successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"GET /api/export/logs","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Exporting certificate logs to Excel","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Certificate logs exported successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"GET /api/export/teachers","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Exporting teachers to Excel","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Teachers exported successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"GET /api/export/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Exporting modules to Excel","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Modules exported successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"GET /api/export/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Exporting printed certificates to Excel","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Printed certificates exported successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"certificate_id":"invalid@#$%","jumlah_medali_snd":100,"jumlah_sertifikat_snd":100,"level":"info","message":"Create certificate request:","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"error","message":"Error (400): Certificate ID can only contain letters, numbers, dashes, and underscores","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"certificate_id":"TEST-NEGATIVE","jumlah_medali_snd":100,"jumlah_sertifikat_snd":-10,"level":"info","message":"Create certificate request:","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"error","message":"Error (400): SND Certificates cannot be negative","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"POST /api/certificates/migrate","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"Migration attempt 1/3 for BATCH-TEST-001","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"error","message":"Error (500): Failed to migrate certificate Insufficient certificate stock. Available: 90, Requested: 999999","service":"certificate-management-api","stack":"Error: Insufficient certificate stock. Available: 90, Requested: 999999\n    at migrateCertificate (E:\\Portfolio\\fullstack-certificate\\backend\\controllers\\CertificateController.js:521:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"PUT /api/users/password","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"info","message":"GET /api/nonexistent","service":"certificate-management-api","timestamp":"2026-02-08 06:28:02"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:28:02"}
+{"level":"warn","message":"Access attempt without token","service":"certificate-management-api","timestamp":"2026-02-08 06:28:02"}
+{"error":"Expected property name or '}' in JSON at position 1 (line 1 column 2)","ip":"::1","level":"warn","message":"Invalid JSON: POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:28:02"}
+{"level":"info","message":"POST /auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:40:24"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-08 06:45:13"}

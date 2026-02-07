@@ -1,0 +1,11 @@
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:18"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:33"}
+{"level":"error","message":"Error (400): Refresh token is required","service":"certificate-management-api","timestamp":"2026-02-08 06:27:40"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 06:27:57"}
+{"level":"error","message":"Error (403): Update operation is not allowed. Please create a new batch for adjustments or use migration feature.","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"error","message":"Error (403): Delete operation is not allowed. Batches are permanent records for audit purposes.","service":"certificate-management-api","timestamp":"2026-02-08 06:27:58"}
+{"level":"error","message":"Error (404): Module not found","service":"certificate-management-api","timestamp":"2026-02-08 06:27:59"}
+{"level":"error","message":"Error (400): Certificate ID can only contain letters, numbers, dashes, and underscores","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"error","message":"Error (400): SND Certificates cannot be negative","service":"certificate-management-api","timestamp":"2026-02-08 06:28:01"}
+{"level":"error","message":"Error (500): Failed to migrate certificate Insufficient certificate stock. Available: 90, Requested: 999999","service":"certificate-management-api","stack":"Error: Insufficient certificate stock. Available: 90, Requested: 999999\n    at migrateCertificate (E:\\Portfolio\\fullstack-certificate\\backend\\controllers\\CertificateController.js:521:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-02-08 06:28:01"}
