@@ -188,6 +188,13 @@ CREATE INDEX IF NOT EXISTS idx_printed_certificates_module ON printed_certificat
 CREATE INDEX IF NOT EXISTS idx_printed_certificates_date ON printed_certificates(ptc_date);
 CREATE INDEX IF NOT EXISTS idx_printed_certificates_printed_by ON printed_certificates(printed_by);
 CREATE INDEX IF NOT EXISTS idx_printed_certificates_branch ON printed_certificates(branch);
+-- Composite index for teacher queries (printed_by + branch)
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_printed_by_branch 
+ON printed_certificates(printed_by, branch);
+
+-- Composite index for date range queries
+CREATE INDEX IF NOT EXISTS idx_printed_certificates_ptc_date_branch 
+ON printed_certificates(ptc_date, branch);
 
 -- =====================================================
 -- 7. FUNCTIONS & TRIGGERS

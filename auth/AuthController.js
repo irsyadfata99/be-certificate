@@ -60,18 +60,23 @@ const login = async (req, res) => {
     }
 
     // Generate JWT token with role
-    const token = jwt.sign(
-      {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: CONSTANTS.JWT.EXPIRES_IN,
-        algorithm: CONSTANTS.JWT.ALGORITHM,
-      },
-    );
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+    };
+
+    // Include teacher-specific data in JWT for teacher role
+    if (user.role === "teacher") {
+      tokenPayload.teacher_name = user.teacher_name;
+      tokenPayload.teacher_division = user.teacher_division;
+      tokenPayload.teacher_branch = user.teacher_branch;
+    }
+
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: CONSTANTS.JWT.EXPIRES_IN,
+      algorithm: CONSTANTS.JWT.ALGORITHM,
+    });
 
     // Prepare user data for response
     const userData = {
