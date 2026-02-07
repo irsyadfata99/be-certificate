@@ -29,6 +29,7 @@ const userRoutes = require("./routes/userRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
 const printedCertificatesRoutes = require("./routes/printedCertificates");
+const exportRoutes = require("./routes/exportRoutes");
 
 const app = express();
 
@@ -130,6 +131,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/modules", moduleRoutes);
 app.use("/api/printed-certificates", printedCertificatesRoutes);
+app.use("/api/export", exportRoutes);
 
 // =====================================================
 // ROOT & HEALTH CHECK
@@ -138,7 +140,7 @@ app.use("/api/printed-certificates", printedCertificatesRoutes);
 app.get("/", (req, res) => {
   res.json({
     message: "Certificate Management API is running",
-    version: "2.4.0",
+    version: "2.5.0",
     environment: process.env.NODE_ENV || "development",
     endpoints: {
       auth: "/api/auth",
@@ -148,6 +150,7 @@ app.get("/", (req, res) => {
       teachers: "/api/teachers",
       modules: "/api/modules",
       printedCertificates: "/api/printed-certificates",
+      export: "/api/export",
     },
   });
 });
@@ -245,6 +248,7 @@ const server = app.listen(PORT, () => {
   logger.info(
     `📜 Printed Certificates: http://localhost:${PORT}/api/printed-certificates`,
   );
+  logger.info(`📥 Export Data: http://localhost:${PORT}/api/export`);
   logger.info(
     `🔄 Refresh Token: http://localhost:${PORT}/api/auth/refresh-token`,
   );
