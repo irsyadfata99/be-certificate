@@ -1,25 +1,36 @@
 -- =====================================================
--- CERTIFICATE MANAGEMENT DATABASE - COMPLETE SQL SCHEMA
+-- CERTIFICATE MANAGEMENT DATABASE - COMPLETE SCHEMA WITH DUMMY DATA
 -- =====================================================
 -- PostgreSQL Database Schema
--- Version: 3.1 (FIXED)
+-- Version: 3.2 (COMPLETE WITH DUMMY DATA)
 -- Updated: February 2026
 -- =====================================================
+-- Admin: username=gulam, password=admin123
+-- Teacher: username=teacher, password=admin123
+-- =====================================================
 
 -- =====================================================
--- DROP EXISTING TABLES (OPTIONAL - FOR FRESH START)
+-- CLEAN START - DROP ALL TABLES
 -- =====================================================
--- Uncomment these lines if you want to start fresh
--- DROP TABLE IF EXISTS module_logs CASCADE;
--- DROP TABLE IF EXISTS modules CASCADE;
--- DROP TABLE IF EXISTS certificate_logs CASCADE;
--- DROP TABLE IF EXISTS certificates CASCADE;
--- DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS printed_certificates CASCADE;
+DROP TABLE IF EXISTS module_logs CASCADE;
+DROP TABLE IF EXISTS modules CASCADE;
+DROP TABLE IF EXISTS certificate_logs CASCADE;
+DROP TABLE IF EXISTS certificates CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- Drop views
+DROP VIEW IF EXISTS v_stock_summary CASCADE;
+DROP VIEW IF EXISTS v_certificates_cumulative CASCADE;
+DROP VIEW IF EXISTS v_recent_logs CASCADE;
+DROP VIEW IF EXISTS v_teachers CASCADE;
+DROP VIEW IF EXISTS v_teachers_by_branch CASCADE;
+DROP VIEW IF EXISTS v_module_stats CASCADE;
 
 -- =====================================================
--- 1. USERS TABLE (ADMIN & TEACHER) - FIXED
+-- 1. USERS TABLE (ADMIN & TEACHER)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -32,20 +43,17 @@ CREATE TABLE IF NOT EXISTS users (
     teacher_division VARCHAR(10) CHECK (teacher_division IN ('JK', 'LK', NULL)),
     teacher_branch VARCHAR(10) CHECK (teacher_branch IN ('SND', 'MKW', 'KBP', NULL)),
     
-    -- REMOVED: default_password column (security fix)
-    
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for users table
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-CREATE INDEX IF NOT EXISTS idx_users_teacher_branch ON users(teacher_branch);
+-- Indexes
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_teacher_branch ON users(teacher_branch);
 
 -- Constraint: Teachers must have required fields
-ALTER TABLE users DROP CONSTRAINT IF EXISTS check_teacher_fields;
 ALTER TABLE users ADD CONSTRAINT check_teacher_fields 
     CHECK (
         (role = 'admin') OR 
@@ -55,7 +63,7 @@ ALTER TABLE users ADD CONSTRAINT check_teacher_fields
 -- =====================================================
 -- 2. CERTIFICATES TABLE (MAIN STOCK)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS certificates (
+CREATE TABLE certificates (
     id SERIAL PRIMARY KEY,
     certificate_id VARCHAR(50) UNIQUE NOT NULL,
     
@@ -79,12 +87,11 @@ CREATE TABLE IF NOT EXISTS certificates (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for certificates table
-CREATE INDEX IF NOT EXISTS idx_certificates_id ON certificates(certificate_id);
-CREATE INDEX IF NOT EXISTS idx_certificates_created_at ON certificates(created_at DESC);
+-- Indexes
+CREATE INDEX idx_certificates_id ON certificates(certificate_id);
+CREATE INDEX idx_certificates_created_at ON certificates(created_at DESC);
 
 -- Constraint: at least one branch must have data
-ALTER TABLE certificates DROP CONSTRAINT IF EXISTS check_at_least_one_branch;
 ALTER TABLE certificates ADD CONSTRAINT check_at_least_one_branch 
     CHECK (
         jumlah_sertifikat_snd > 0 OR jumlah_medali_snd > 0 OR
@@ -95,7 +102,7 @@ ALTER TABLE certificates ADD CONSTRAINT check_at_least_one_branch
 -- =====================================================
 -- 3. CERTIFICATE LOGS TABLE (AUDIT TRAIL)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS certificate_logs (
+CREATE TABLE certificate_logs (
     id SERIAL PRIMARY KEY,
     certificate_id VARCHAR(50) NOT NULL,
     action_type VARCHAR(50) NOT NULL,
@@ -116,20 +123,18 @@ CREATE TABLE IF NOT EXISTS certificate_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for certificate_logs table
-CREATE INDEX IF NOT EXISTS idx_logs_certificate_id ON certificate_logs(certificate_id);
-CREATE INDEX IF NOT EXISTS idx_logs_action_type ON certificate_logs(action_type);
-CREATE INDEX IF NOT EXISTS idx_logs_created_at ON certificate_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_logs_performed_by ON certificate_logs(performed_by);
-
--- GIN indexes for JSON queries (PostgreSQL 9.4+)
-CREATE INDEX IF NOT EXISTS idx_logs_old_values ON certificate_logs USING GIN (old_values);
-CREATE INDEX IF NOT EXISTS idx_logs_new_values ON certificate_logs USING GIN (new_values);
+-- Indexes
+CREATE INDEX idx_logs_certificate_id ON certificate_logs(certificate_id);
+CREATE INDEX idx_logs_action_type ON certificate_logs(action_type);
+CREATE INDEX idx_logs_created_at ON certificate_logs(created_at DESC);
+CREATE INDEX idx_logs_performed_by ON certificate_logs(performed_by);
+CREATE INDEX idx_logs_old_values ON certificate_logs USING GIN (old_values);
+CREATE INDEX idx_logs_new_values ON certificate_logs USING GIN (new_values);
 
 -- =====================================================
 -- 4. MODULES TABLE
 -- =====================================================
-CREATE TABLE IF NOT EXISTS modules (
+CREATE TABLE modules (
     id SERIAL PRIMARY KEY,
     module_code VARCHAR(50) UNIQUE NOT NULL,
     module_name VARCHAR(100) NOT NULL,
@@ -139,19 +144,18 @@ CREATE TABLE IF NOT EXISTS modules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Constraint: min_age must be <= max_age
     CONSTRAINT check_age_range CHECK (min_age <= max_age)
 );
 
--- Indexes for modules table
-CREATE INDEX IF NOT EXISTS idx_modules_code ON modules(module_code);
-CREATE INDEX IF NOT EXISTS idx_modules_division ON modules(division);
-CREATE INDEX IF NOT EXISTS idx_modules_age_range ON modules(min_age, max_age);
+-- Indexes
+CREATE INDEX idx_modules_code ON modules(module_code);
+CREATE INDEX idx_modules_division ON modules(division);
+CREATE INDEX idx_modules_age_range ON modules(min_age, max_age);
 
 -- =====================================================
 -- 5. MODULE LOGS TABLE
 -- =====================================================
-CREATE TABLE IF NOT EXISTS module_logs (
+CREATE TABLE module_logs (
     id SERIAL PRIMARY KEY,
     module_id INTEGER REFERENCES modules(id) ON DELETE CASCADE,
     module_code VARCHAR(50) NOT NULL,
@@ -162,15 +166,15 @@ CREATE TABLE IF NOT EXISTS module_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for module_logs table
-CREATE INDEX IF NOT EXISTS idx_module_logs_module_id ON module_logs(module_id);
-CREATE INDEX IF NOT EXISTS idx_module_logs_action_type ON module_logs(action_type);
-CREATE INDEX IF NOT EXISTS idx_module_logs_created_at ON module_logs(created_at DESC);
+-- Indexes
+CREATE INDEX idx_module_logs_module_id ON module_logs(module_id);
+CREATE INDEX idx_module_logs_action_type ON module_logs(action_type);
+CREATE INDEX idx_module_logs_created_at ON module_logs(created_at DESC);
 
 -- =====================================================
--- 6. PRINTED CERTIFICATES TABLE (for printedCertificates.js route)
+-- 6. PRINTED CERTIFICATES TABLE
 -- =====================================================
-CREATE TABLE IF NOT EXISTS printed_certificates (
+CREATE TABLE printed_certificates (
     id SERIAL PRIMARY KEY,
     certificate_id VARCHAR(50) NOT NULL,
     student_name VARCHAR(100) NOT NULL,
@@ -181,23 +185,18 @@ CREATE TABLE IF NOT EXISTS printed_certificates (
     printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for printed_certificates table
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_cert_id ON printed_certificates(certificate_id);
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_student ON printed_certificates(student_name);
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_module ON printed_certificates(module_id);
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_date ON printed_certificates(ptc_date);
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_printed_by ON printed_certificates(printed_by);
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_branch ON printed_certificates(branch);
--- Composite index for teacher queries (printed_by + branch)
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_printed_by_branch 
-ON printed_certificates(printed_by, branch);
-
--- Composite index for date range queries
-CREATE INDEX IF NOT EXISTS idx_printed_certificates_ptc_date_branch 
-ON printed_certificates(ptc_date, branch);
+-- Indexes
+CREATE INDEX idx_printed_certificates_cert_id ON printed_certificates(certificate_id);
+CREATE INDEX idx_printed_certificates_student ON printed_certificates(student_name);
+CREATE INDEX idx_printed_certificates_module ON printed_certificates(module_id);
+CREATE INDEX idx_printed_certificates_date ON printed_certificates(ptc_date);
+CREATE INDEX idx_printed_certificates_printed_by ON printed_certificates(printed_by);
+CREATE INDEX idx_printed_certificates_branch ON printed_certificates(branch);
+CREATE INDEX idx_printed_certificates_printed_by_branch ON printed_certificates(printed_by, branch);
+CREATE INDEX idx_printed_certificates_ptc_date_branch ON printed_certificates(ptc_date, branch);
 
 -- =====================================================
--- 7. FUNCTIONS & TRIGGERS
+-- 7. TRIGGERS
 -- =====================================================
 
 -- Function to auto-update updated_at timestamp
@@ -209,33 +208,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger for users table
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+-- Triggers
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Trigger for certificates table
-DROP TRIGGER IF EXISTS update_certificates_updated_at ON certificates;
 CREATE TRIGGER update_certificates_updated_at
     BEFORE UPDATE ON certificates
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Trigger for modules table
-DROP TRIGGER IF EXISTS update_modules_updated_at ON modules;
 CREATE TRIGGER update_modules_updated_at
     BEFORE UPDATE ON modules
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 8. USEFUL VIEWS
+-- 8. VIEWS
 -- =====================================================
 
--- View: Current Stock Summary
-DROP VIEW IF EXISTS v_stock_summary CASCADE;
+-- Stock Summary View
 CREATE OR REPLACE VIEW v_stock_summary AS
 SELECT 
     COALESCE(SUM(jumlah_sertifikat_snd), 0) as snd_certificates,
@@ -248,8 +241,7 @@ SELECT
     COALESCE(SUM(jumlah_medali_snd + jumlah_medali_mkw + jumlah_medali_kbp), 0) as total_medals
 FROM certificates;
 
--- View: Certificates with Cumulative Totals
-DROP VIEW IF EXISTS v_certificates_cumulative CASCADE;
+-- Certificates with Cumulative Totals View
 CREATE OR REPLACE VIEW v_certificates_cumulative AS
 WITH batch_totals AS (
     SELECT 
@@ -265,8 +257,7 @@ SELECT
 FROM batch_totals
 ORDER BY created_at DESC;
 
--- View: Recent Activity Logs (Last 100)
-DROP VIEW IF EXISTS v_recent_logs CASCADE;
+-- Recent Logs View
 CREATE OR REPLACE VIEW v_recent_logs AS
 SELECT 
     id,
@@ -283,8 +274,7 @@ FROM certificate_logs
 ORDER BY created_at DESC
 LIMIT 100;
 
--- View: All Teachers (FIXED - removed default_password)
-DROP VIEW IF EXISTS v_teachers CASCADE;
+-- Teachers View
 CREATE OR REPLACE VIEW v_teachers AS
 SELECT 
     id,
@@ -298,8 +288,7 @@ FROM users
 WHERE role = 'teacher'
 ORDER BY created_at DESC;
 
--- View: Teachers by Branch
-DROP VIEW IF EXISTS v_teachers_by_branch CASCADE;
+-- Teachers by Branch View
 CREATE OR REPLACE VIEW v_teachers_by_branch AS
 SELECT 
     teacher_branch,
@@ -310,8 +299,7 @@ WHERE role = 'teacher'
 GROUP BY teacher_branch, teacher_division
 ORDER BY teacher_branch, teacher_division;
 
--- View: Module Statistics
-DROP VIEW IF EXISTS v_module_stats CASCADE;
+-- Module Statistics View
 CREATE OR REPLACE VIEW v_module_stats AS
 SELECT 
     division,
@@ -322,238 +310,241 @@ FROM modules
 GROUP BY division;
 
 -- =====================================================
--- 9. SAMPLE DATA - USERS WITH REAL BCRYPT HASHES
+-- 9. INSERT USERS (WITH BCRYPT HASHES)
 -- =====================================================
 
 -- ADMIN USER
 -- Username: gulam
 -- Password: admin123
--- Bcrypt hash generated with: node -e "console.log(require('bcrypt').hashSync('admin123', 10))"
-INSERT INTO users (username, password, role) 
-VALUES (
-    'gulam', 
-    '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW',
-    'admin'
-)
-ON CONFLICT (username) DO NOTHING;
+-- Hash generated with bcrypt, rounds=10
+INSERT INTO users (username, password, role) VALUES
+('gulam', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'admin');
 
--- TEACHER USER  
--- Username: evaherl
--- Password: admin123456
+-- TEACHER USER
+-- Username: teacher
+-- Password: admin123
 -- Teacher: Eva Herlina, Division: JK, Branch: SND
--- Bcrypt hash generated with: node -e "console.log(require('bcrypt').hashSync('admin123456', 10))"
-INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) 
-VALUES (
-    'evaherl',
-    '$2b$10$9kzJ5N5Z5Z0vY4U9KqI1Y6vxqWYjhIONvjJb3bPDlOGKvN0.PQ/Ct',
-    'teacher',
-    'Eva Herlina',
-    'JK',
-    'SND'
-)
-ON CONFLICT (username) DO NOTHING;
+INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) VALUES
+('teacher', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Eva Herlina', 'JK', 'SND');
+
+-- Additional teacher users for testing
+INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) VALUES
+('teacher_lk_snd', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Budi Santoso', 'LK', 'SND'),
+('teacher_jk_mkw', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Siti Nurhaliza', 'JK', 'MKW'),
+('teacher_lk_mkw', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Ahmad Dhani', 'LK', 'MKW'),
+('teacher_jk_kbp', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Dewi Lestari', 'JK', 'KBP'),
+('teacher_lk_kbp', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Rina Susanti', 'LK', 'KBP');
 
 -- =====================================================
--- 10. SAMPLE DATA - CERTIFICATES (OPTIONAL)
--- =====================================================
-
--- Example BATCH-001 with mixed distribution
-INSERT INTO certificates (
-    certificate_id,
-    jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd,
-    jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw,
-    jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp
-) VALUES (
-    'BATCH-001',
-    100, 100, 100,  -- SND: 100 certs, 100 medals
-    0, 0, 0,        -- MKW: 0 certs, 0 medals
-    0, 0, 0         -- KBP: 0 certs, 0 medals
-)
-ON CONFLICT (certificate_id) DO NOTHING;
-
--- Log for BATCH-001 creation
-INSERT INTO certificate_logs (
-    certificate_id,
-    action_type,
-    description,
-    certificate_amount,
-    medal_amount,
-    new_values,
-    performed_by
-) VALUES (
-    'BATCH-001',
-    'CREATE',
-    'Created new certificate batch: SND: 100 certs, 100 medals | MKW: 0 certs, 0 medals | KBP: 0 certs, 0 medals',
-    100,
-    100,
-    '{"jumlah_sertifikat_snd": 100, "jumlah_medali_snd": 100, "jumlah_sertifikat_mkw": 0, "jumlah_medali_mkw": 0, "jumlah_sertifikat_kbp": 0, "jumlah_medali_kbp": 0}'::jsonb,
-    'System'
-);
-
--- =====================================================
--- 11. SAMPLE DATA - MODULES (OPTIONAL)
+-- 10. INSERT MODULES (DUMMY DATA)
 -- =====================================================
 
 INSERT INTO modules (module_code, module_name, division, min_age, max_age) VALUES
-('JK-INTRO-001', 'Introduction to Coding', 'JK', 4, 6),
-('JK-ROBOT-001', 'Basic Robotics', 'JK', 5, 7),
-('JK-GAME-001', 'Game Design Basics', 'JK', 6, 8),
-('LK-WEB-001', 'Web Development Fundamentals', 'LK', 8, 12),
-('LK-PYTHON-001', 'Python Programming', 'LK', 10, 14),
-('LK-AI-001', 'Introduction to AI', 'LK', 12, 16)
-ON CONFLICT (module_code) DO NOTHING;
+-- JK Modules (Junior Kids)
+('JK-001', 'Dasar Coding untuk Anak', 'JK', 4, 6),
+('JK-002', 'Robotika Sederhana', 'JK', 5, 7),
+('JK-003', 'Desain Game Pemula', 'JK', 6, 8),
+('JK-004', 'Animasi Digital Dasar', 'JK', 5, 7),
+('JK-005', 'Logika & Problem Solving', 'JK', 4, 6),
+('JK-006', 'Scratch Programming', 'JK', 5, 8),
+('JK-007', 'LEGO Robotics', 'JK', 6, 8),
+('JK-008', 'Digital Storytelling', 'JK', 5, 7),
 
--- Log module creation
-INSERT INTO module_logs (module_id, module_code, action_type, description, performed_by)
-SELECT id, module_code, 'MODULE_CREATED', 'Module ' || module_code || ' - ' || module_name || ' created', 'System'
-FROM modules
-WHERE module_code IN ('JK-INTRO-001', 'JK-ROBOT-001', 'JK-GAME-001', 'LK-WEB-001', 'LK-PYTHON-001', 'LK-AI-001');
+-- LK Modules (Lanjutan Kids)
+('LK-001', 'Web Development Dasar', 'LK', 8, 12),
+('LK-002', 'Python Programming', 'LK', 9, 13),
+('LK-003', 'Game Development Unity', 'LK', 10, 14),
+('LK-004', 'Mobile App Development', 'LK', 11, 15),
+('LK-005', 'Data Science untuk Remaja', 'LK', 12, 16),
+('LK-006', 'Artificial Intelligence Intro', 'LK', 12, 16),
+('LK-007', 'Cyber Security Basics', 'LK', 11, 15),
+('LK-008', 'JavaScript Advanced', 'LK', 10, 14),
+('LK-009', 'Arduino Programming', 'LK', 9, 13),
+('LK-010', '3D Modeling & Printing', 'LK', 10, 14);
 
 -- =====================================================
--- 12. VERIFICATION QUERIES
+-- 11. INSERT CERTIFICATES (DUMMY DATA)
 -- =====================================================
 
--- Verify tables exist
-SELECT 
-    table_name,
-    (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = t.table_name) as column_count
-FROM information_schema.tables t
-WHERE table_schema = 'public' 
-  AND table_type = 'BASE TABLE'
-ORDER BY table_name;
+-- Batch 1 - Initial stock (3 months ago)
+INSERT INTO certificates (certificate_id, jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd, jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw, jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp, created_at) VALUES
+('BATCH-2025-001', 500, 500, 500, 0, 0, 0, 0, 0, 0, NOW() - INTERVAL '90 days');
 
--- Verify views exist
-SELECT table_name as view_name
-FROM information_schema.views
-WHERE table_schema = 'public'
-ORDER BY table_name;
+-- Batch 2 - Restock (2 months ago)
+INSERT INTO certificates (certificate_id, jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd, jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw, jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp, created_at) VALUES
+('BATCH-2025-002', 300, 300, 300, 0, 0, 0, 0, 0, 0, NOW() - INTERVAL '60 days');
 
--- Verify stock summary
+-- Batch 3 - Mixed distribution (1 month ago)
+INSERT INTO certificates (certificate_id, jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd, jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw, jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp, created_at) VALUES
+('BATCH-2025-003', 200, 200, 200, 100, 100, 100, 50, 50, 50, NOW() - INTERVAL '30 days');
+
+-- Batch 4 - Recent (1 week ago)
+INSERT INTO certificates (certificate_id, jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd, jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw, jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp, created_at) VALUES
+('BATCH-2026-001', 400, 400, 400, 0, 0, 0, 0, 0, 0, NOW() - INTERVAL '7 days');
+
+-- Batch 5 - Today
+INSERT INTO certificates (certificate_id, jumlah_sertifikat_snd, jumlah_medali_snd, medali_awal_snd, jumlah_sertifikat_mkw, jumlah_medali_mkw, medali_awal_mkw, jumlah_sertifikat_kbp, jumlah_medali_kbp, medali_awal_kbp, created_at) VALUES
+('BATCH-2026-002', 250, 250, 250, 150, 150, 150, 100, 100, 100, NOW());
+
+-- =====================================================
+-- 12. INSERT CERTIFICATE LOGS (DUMMY DATA)
+-- =====================================================
+
+-- Logs for BATCH-2025-001 creation
+INSERT INTO certificate_logs (certificate_id, action_type, description, certificate_amount, medal_amount, new_values, performed_by, created_at) VALUES
+('BATCH-2025-001', 'CREATE', 'Created initial certificate batch for SND branch', 500, 500, '{"jumlah_sertifikat_snd": 500, "jumlah_medali_snd": 500}'::jsonb, 'gulam', NOW() - INTERVAL '90 days');
+
+-- Logs for BATCH-2025-002 creation
+INSERT INTO certificate_logs (certificate_id, action_type, description, certificate_amount, medal_amount, new_values, performed_by, created_at) VALUES
+('BATCH-2025-002', 'CREATE', 'Restock sertifikat SND', 300, 300, '{"jumlah_sertifikat_snd": 300, "jumlah_medali_snd": 300}'::jsonb, 'gulam', NOW() - INTERVAL '60 days');
+
+-- Migration example: SND -> MKW (45 days ago)
+INSERT INTO certificate_logs (certificate_id, action_type, description, from_branch, to_branch, certificate_amount, medal_amount, old_values, new_values, performed_by, created_at) VALUES
+('BATCH-2025-001', 'MIGRATE', 'Migrated stock from SND to MKW', 'SND', 'MKW', 100, 100, '{"snd_cert": 500, "snd_medal": 500, "mkw_cert": 0, "mkw_medal": 0}'::jsonb, '{"snd_cert": 400, "snd_medal": 400, "mkw_cert": 100, "mkw_medal": 100}'::jsonb, 'gulam', NOW() - INTERVAL '45 days');
+
+-- Logs for BATCH-2025-003 creation
+INSERT INTO certificate_logs (certificate_id, action_type, description, certificate_amount, medal_amount, new_values, performed_by, created_at) VALUES
+('BATCH-2025-003', 'CREATE', 'Created multi-branch distribution', 350, 350, '{"jumlah_sertifikat_snd": 200, "jumlah_medali_snd": 200, "jumlah_sertifikat_mkw": 100, "jumlah_medali_mkw": 100, "jumlah_sertifikat_kbp": 50, "jumlah_medali_kbp": 50}'::jsonb, 'gulam', NOW() - INTERVAL '30 days');
+
+-- Migration example: SND -> KBP (15 days ago)
+INSERT INTO certificate_logs (certificate_id, action_type, description, from_branch, to_branch, certificate_amount, medal_amount, old_values, new_values, performed_by, created_at) VALUES
+('BATCH-2025-002', 'MIGRATE', 'Migrated stock from SND to KBP', 'SND', 'KBP', 50, 50, '{"snd_cert": 300, "snd_medal": 300, "kbp_cert": 0, "kbp_medal": 0}'::jsonb, '{"snd_cert": 250, "snd_medal": 250, "kbp_cert": 50, "kbp_medal": 50}'::jsonb, 'gulam', NOW() - INTERVAL '15 days');
+
+-- Logs for recent batches
+INSERT INTO certificate_logs (certificate_id, action_type, description, certificate_amount, medal_amount, new_values, performed_by, created_at) VALUES
+('BATCH-2026-001', 'CREATE', 'New batch for February 2026', 400, 400, '{"jumlah_sertifikat_snd": 400, "jumlah_medali_snd": 400}'::jsonb, 'gulam', NOW() - INTERVAL '7 days'),
+('BATCH-2026-002', 'CREATE', 'Latest multi-branch batch', 500, 500, '{"jumlah_sertifikat_snd": 250, "jumlah_medali_snd": 250, "jumlah_sertifikat_mkw": 150, "jumlah_medali_mkw": 150, "jumlah_sertifikat_kbp": 100, "jumlah_medali_kbp": 100}'::jsonb, 'gulam', NOW());
+
+-- =====================================================
+-- 13. INSERT MODULE LOGS (DUMMY DATA)
+-- =====================================================
+
+INSERT INTO module_logs (module_id, module_code, action_type, description, performed_by, created_at)
+SELECT id, module_code, 'MODULE_CREATED', 'Module ' || module_code || ' - ' || module_name || ' created', 'gulam', created_at
+FROM modules;
+
+-- =====================================================
+-- 14. INSERT PRINTED CERTIFICATES (DUMMY DATA)
+-- =====================================================
+
+-- Get teacher IDs for reference
+DO $$
+DECLARE
+    teacher_id INT;
+    module_jk_1 INT;
+    module_jk_2 INT;
+    module_lk_1 INT;
+    module_lk_2 INT;
+BEGIN
+    -- Get teacher ID
+    SELECT id INTO teacher_id FROM users WHERE username = 'teacher' LIMIT 1;
+    
+    -- Get module IDs
+    SELECT id INTO module_jk_1 FROM modules WHERE module_code = 'JK-001';
+    SELECT id INTO module_jk_2 FROM modules WHERE module_code = 'JK-002';
+    SELECT id INTO module_lk_1 FROM modules WHERE module_code = 'LK-001';
+    SELECT id INTO module_lk_2 FROM modules WHERE module_code = 'LK-002';
+    
+    -- Insert printed certificates samples (last 30 days)
+    INSERT INTO printed_certificates (certificate_id, student_name, module_id, ptc_date, printed_by, branch, printed_at) VALUES
+    -- Recent prints (last week)
+    ('CERT-2026-0001', 'Andi Wijaya', module_jk_1, NOW() - INTERVAL '2 days', teacher_id, 'SND', NOW() - INTERVAL '2 days'),
+    ('CERT-2026-0002', 'Budi Santoso', module_jk_1, NOW() - INTERVAL '2 days', teacher_id, 'SND', NOW() - INTERVAL '2 days'),
+    ('CERT-2026-0003', 'Citra Dewi', module_jk_2, NOW() - INTERVAL '3 days', teacher_id, 'SND', NOW() - INTERVAL '3 days'),
+    ('CERT-2026-0004', 'Dina Puspita', module_jk_2, NOW() - INTERVAL '4 days', teacher_id, 'SND', NOW() - INTERVAL '4 days'),
+    ('CERT-2026-0005', 'Eko Prasetyo', module_lk_1, NOW() - INTERVAL '5 days', teacher_id, 'SND', NOW() - INTERVAL '5 days'),
+    
+    -- Last 2 weeks
+    ('CERT-2026-0006', 'Fitri Handayani', module_lk_1, NOW() - INTERVAL '10 days', teacher_id, 'SND', NOW() - INTERVAL '10 days'),
+    ('CERT-2026-0007', 'Gani Firmansyah', module_lk_2, NOW() - INTERVAL '12 days', teacher_id, 'SND', NOW() - INTERVAL '12 days'),
+    ('CERT-2026-0008', 'Hana Rahmawati', module_jk_1, NOW() - INTERVAL '14 days', teacher_id, 'SND', NOW() - INTERVAL '14 days'),
+    
+    -- Last month
+    ('CERT-2026-0009', 'Indra Gunawan', module_jk_2, NOW() - INTERVAL '20 days', teacher_id, 'SND', NOW() - INTERVAL '20 days'),
+    ('CERT-2026-0010', 'Joko Widodo Jr', module_lk_1, NOW() - INTERVAL '25 days', teacher_id, 'SND', NOW() - INTERVAL '25 days');
+END $$;
+
+-- =====================================================
+-- 15. VERIFICATION & SUMMARY
+-- =====================================================
+
+-- Show users
+SELECT '=== USERS ===' as info;
+SELECT id, username, role, teacher_name, teacher_branch FROM users ORDER BY role, username;
+
+-- Show modules count
+SELECT '=== MODULES SUMMARY ===' as info;
+SELECT division, COUNT(*) as total FROM modules GROUP BY division;
+
+-- Show certificates summary
+SELECT '=== CERTIFICATES SUMMARY ===' as info;
 SELECT * FROM v_stock_summary;
 
--- Verify users (FIXED - no default_password column)
-SELECT id, username, role, teacher_name, teacher_branch FROM users;
+-- Show certificate batches
+SELECT '=== CERTIFICATE BATCHES ===' as info;
+SELECT 
+    certificate_id,
+    jumlah_sertifikat_snd as snd_cert,
+    jumlah_medali_snd as snd_medal,
+    jumlah_sertifikat_mkw as mkw_cert,
+    jumlah_medali_mkw as mkw_medal,
+    jumlah_sertifikat_kbp as kbp_cert,
+    jumlah_medali_kbp as kbp_medal,
+    created_at::date as created
+FROM certificates
+ORDER BY created_at DESC;
 
--- Verify modules
-SELECT id, module_code, module_name, division, min_age, max_age FROM modules;
+-- Show recent logs
+SELECT '=== RECENT CERTIFICATE LOGS ===' as info;
+SELECT 
+    certificate_id,
+    action_type,
+    description,
+    performed_by,
+    created_at::date as date
+FROM certificate_logs
+ORDER BY created_at DESC
+LIMIT 10;
 
--- =====================================================
--- 13. USEFUL MAINTENANCE QUERIES
--- =====================================================
-
--- Query: Get stock summary
--- SELECT * FROM v_stock_summary;
-
--- Query: Get certificates with cumulative totals
--- SELECT * FROM v_certificates_cumulative;
-
--- Query: Get recent logs
--- SELECT * FROM v_recent_logs;
-
--- Query: Get all teachers
--- SELECT * FROM v_teachers;
-
--- Query: Get teachers by branch
--- SELECT * FROM v_teachers_by_branch;
-
--- Query: Get module statistics
--- SELECT * FROM v_module_stats;
-
--- Query: Get all migrations
--- SELECT * FROM certificate_logs WHERE action_type = 'MIGRATE' ORDER BY created_at DESC;
-
--- Query: Find batches with low stock (< 10)
--- SELECT 
---     certificate_id,
---     jumlah_sertifikat_snd,
---     jumlah_medali_snd,
---     jumlah_sertifikat_mkw,
---     jumlah_medali_mkw,
---     jumlah_sertifikat_kbp,
---     jumlah_medali_kbp
--- FROM certificates
--- WHERE 
---     jumlah_sertifikat_snd < 10 OR
---     jumlah_medali_snd < 10 OR
---     jumlah_sertifikat_mkw < 10 OR
---     jumlah_medali_mkw < 10 OR
---     jumlah_sertifikat_kbp < 10 OR
---     jumlah_medali_kbp < 10;
-
--- Query: Delete logs older than 90 days
--- DELETE FROM certificate_logs WHERE created_at < NOW() - INTERVAL '90 days';
-
--- Query: Delete module logs older than 90 days
--- DELETE FROM module_logs WHERE created_at < NOW() - INTERVAL '90 days';
-
--- Maintenance: Vacuum and analyze tables
--- VACUUM ANALYZE users;
--- VACUUM ANALYZE certificates;
--- VACUUM ANALYZE certificate_logs;
--- VACUUM ANALYZE modules;
--- VACUUM ANALYZE module_logs;
+-- Show printed certificates count
+SELECT '=== PRINTED CERTIFICATES ===' as info;
+SELECT COUNT(*) as total_printed FROM printed_certificates;
 
 -- =====================================================
--- 14. DATABASE SIZE QUERIES
--- =====================================================
-
--- Check database size
--- SELECT pg_size_pretty(pg_database_size(current_database())) as database_size;
-
--- Check table sizes
--- SELECT 
---     schemaname,
---     tablename,
---     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
---     pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) AS table_size,
---     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename) - pg_relation_size(schemaname||'.'||tablename)) AS indexes_size
--- FROM pg_tables
--- WHERE schemaname = 'public'
--- ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
-
--- =====================================================
--- 15. BACKUP & RESTORE COMMANDS
--- =====================================================
-
--- Backup database (run in terminal, not in psql):
--- pg_dump -U postgres -d certificate_db > backup_$(date +%Y%m%d_%H%M%S).sql
-
--- Restore database (run in terminal, not in psql):
--- psql -U postgres -d certificate_db < backup_20260206_120000.sql
-
--- Backup specific table:
--- pg_dump -U postgres -d certificate_db -t certificates > certificates_backup.sql
-
--- =====================================================
--- END OF SQL SCRIPT
+-- END OF SCHEMA
 -- =====================================================
 
 -- =====================================================
--- INSTALLATION NOTES:
+-- LOGIN CREDENTIALS
 -- =====================================================
 -- 
--- 1. Create database first:
---    CREATE DATABASE certificate_db;
+-- ADMIN:
+--   Username: gulam
+--   Password: admin123
 -- 
--- 2. Run this script:
---    psql -U postgres -d certificate_db -f schema.sql
+-- TEACHER:
+--   Username: teacher
+--   Password: admin123
 -- 
--- 3. Test login credentials:
---    Admin: username=gulam, password=admin123
---    Teacher: username=evaherl, password=admin123456
+-- ALL OTHER TEACHERS:
+--   Password: admin123
 -- 
--- 4. Verify installation:
---    SELECT * FROM v_stock_summary;
+-- =====================================================
+-- INSTALLATION
+-- =====================================================
+-- 
+-- 1. Drop existing database (if any):
+--    DROP DATABASE IF EXISTS certificate_management;
+-- 
+-- 2. Create new database:
+--    CREATE DATABASE certificate_management;
+-- 
+-- 3. Run this script:
+--    psql -U postgres -d certificate_management -f schema-complete-with-dummy-data.sql
+-- 
+-- 4. Verify:
+--    psql -U postgres -d certificate_management
 --    SELECT * FROM users;
---    SELECT * FROM modules;
--- 
--- 5. Configure .env file:
---    DB_USER=postgres
---    DB_HOST=localhost
---    DB_DATABASE=certificate_db
---    DB_PASSWORD=admin
---    DB_PORT=5432
---    JWT_SECRET=your_super_secret_key_here_change_this
---    PORT=3000
+--    SELECT * FROM v_stock_summary;
 -- 
 -- =====================================================
