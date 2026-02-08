@@ -202,3 +202,25 @@
 {"error":"Expected property name or '}' in JSON at position 1 (line 1 column 2)","ip":"::1","level":"warn","message":"Invalid JSON: POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:28:02"}
 {"level":"info","message":"POST /auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:40:24"}
 {"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-08 06:45:13"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-08 06:53:01"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-08 06:53:02"}
+{"level":"info","message":"POST /auth/login","service":"certificate-management-api","timestamp":"2026-02-08 06:53:19"}
+{"level":"info","message":"POST /auth/login","service":"certificate-management-api","timestamp":"2026-02-08 07:02:04"}
+{"level":"info","message":"POST /auth/login","service":"certificate-management-api","timestamp":"2026-02-08 07:05:07"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-08 07:41:09"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-08 07:41:09"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-08 07:41:09"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 07:41:09"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-08 07:42:06"}
