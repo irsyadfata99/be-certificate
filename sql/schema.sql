@@ -318,22 +318,22 @@ GROUP BY division;
 -- Password: admin123
 -- Hash generated with bcrypt, rounds=10
 INSERT INTO users (username, password, role) VALUES
-('gulam', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'admin');
+('gulam', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'admin');
 
 -- TEACHER USER
 -- Username: teacher
 -- Password: admin123
 -- Teacher: Eva Herlina, Division: JK, Branch: SND
 INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) VALUES
-('teacher', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Eva Herlina', 'JK', 'SND');
+('teacher', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Eva Herlina', 'JK', 'SND');
 
 -- Additional teacher users for testing
 INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) VALUES
-('teacher_lk_snd', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Budi Santoso', 'LK', 'SND'),
-('teacher_jk_mkw', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Siti Nurhaliza', 'JK', 'MKW'),
-('teacher_lk_mkw', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Ahmad Dhani', 'LK', 'MKW'),
-('teacher_jk_kbp', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Dewi Lestari', 'JK', 'KBP'),
-('teacher_lk_kbp', '$2b$10$YjhIONvjJb3bPDlOGKvN0.PQ/CtZC1jYz5Z5Z0vY4U9KqI1Y6vxqW', 'teacher', 'Rina Susanti', 'LK', 'KBP');
+('teacher_lk_snd', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Budi Santoso', 'LK', 'SND'),
+('teacher_jk_mkw', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Siti Nurhaliza', 'JK', 'MKW'),
+('teacher_lk_mkw', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Ahmad Dhani', 'LK', 'MKW'),
+('teacher_jk_kbp', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Dewi Lestari', 'JK', 'KBP'),
+('teacher_lk_kbp', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Rina Susanti', 'LK', 'KBP');
 
 -- =====================================================
 -- 10. INSERT MODULES (DUMMY DATA)

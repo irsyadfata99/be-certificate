@@ -16,3 +16,14 @@
 {"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 08:00:28"}
 {"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 08:00:50"}
 {"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 08:01:20"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 08:13:51"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 08:21:30"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-08 08:22:17"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:37:17"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:37:17"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:39:42"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:39:42"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:51:11"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:51:11"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:51:56"}
+{"level":"error","message":"Error (404): Certificate not found","service":"certificate-management-api","timestamp":"2026-02-08 08:51:56"}
