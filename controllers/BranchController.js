@@ -623,45 +623,74 @@ const deleteBranch = async (req, res) => {
 // =====================================================
 const getBranchStats = async (req, res) => {
   try {
-    const statsQuery = `
+    // Overall branch stats
+    const overallQuery = `
       SELECT 
         COUNT(*) as total_branches,
         COUNT(CASE WHEN is_active = true THEN 1 END) as active_branches,
         COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_branches
       FROM branches
     `;
+    const overallResult = await pool.query(overallQuery);
 
-    const statsResult = await pool.query(statsQuery);
+    // ADDED: Total students across all branches
+    const totalStudentsQuery = `
+      SELECT COUNT(*) as total_students
+      FROM students
+      WHERE status = 'active'
+    `;
+    const totalStudentsResult = await pool.query(totalStudentsQuery);
 
-    // Get per-branch statistics - FIXED to use branch_id instead of branch_code
+    // ADDED: Total teachers across all branches
+    const totalTeachersQuery = `
+      SELECT COUNT(DISTINCT teacher_id) as total_teachers
+      FROM teacher_branches
+    `;
+    const totalTeachersResult = await pool.query(totalTeachersQuery);
+
+    // ADDED: Total stock across all branches
+    const totalStockQuery = `
+      SELECT 
+        COALESCE(SUM(jumlah_sertifikat), 0) as total_certificates,
+        COALESCE(SUM(jumlah_medali), 0) as total_medals
+      FROM certificate_stock
+    `;
+    const totalStockResult = await pool.query(totalStockQuery);
+
+    // Per-branch statistics
     const branchStatsQuery = `
       SELECT 
-        b.id,
+        b.id as branch_id,
         b.branch_code,
         b.branch_name,
         b.is_active,
-        COUNT(DISTINCT CASE WHEN s.status = 'active' THEN s.id END) as active_students,
-        COUNT(DISTINCT CASE WHEN s.status = 'inactive' THEN s.id END) as inactive_students,
-        COUNT(DISTINCT tb.teacher_id) as teachers_count,
-        COUNT(DISTINCT sm.student_id) as students_with_completed_modules,
-        COALESCE(SUM(cs.jumlah_sertifikat), 0) as total_certificates,
-        COALESCE(SUM(cs.jumlah_medali), 0) as total_medals
+        COUNT(DISTINCT CASE WHEN s.status = 'active' THEN s.id END)::INTEGER as students,
+        COUNT(DISTINCT tb.teacher_id)::INTEGER as teachers,
+        COALESCE(SUM(cs.jumlah_sertifikat), 0)::INTEGER as stock
       FROM branches b
       LEFT JOIN students s ON b.id = s.branch_id
       LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
-      LEFT JOIN student_modules sm ON s.id = sm.student_id
       LEFT JOIN certificate_stock cs ON b.branch_code = cs.branch_code
       GROUP BY b.id, b.branch_code, b.branch_name, b.is_active
       ORDER BY b.branch_name
     `;
-
     const branchStatsResult = await pool.query(branchStatsQuery);
 
     logger.info("Branch statistics generated successfully");
 
     return sendSuccess(res, "Branch statistics retrieved successfully", {
-      overall: statsResult.rows[0],
-      by_branch: branchStatsResult.rows,
+      // Overall stats
+      total_students: parseInt(totalStudentsResult.rows[0].total_students) || 0,
+      total_teachers: parseInt(totalTeachersResult.rows[0].total_teachers) || 0,
+      total_stock: parseInt(totalStockResult.rows[0].total_certificates) || 0,
+
+      // Branch breakdown
+      total_branches: parseInt(overallResult.rows[0].total_branches) || 0,
+      active_branches: parseInt(overallResult.rows[0].active_branches) || 0,
+      inactive_branches: parseInt(overallResult.rows[0].inactive_branches) || 0,
+
+      // Per-branch details
+      branches: branchStatsResult.rows,
     });
   } catch (error) {
     return sendError(
