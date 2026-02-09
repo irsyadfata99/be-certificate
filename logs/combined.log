@@ -1498,3 +1498,306 @@
 {"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 11:48:54"}
 {"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 11:48:54"}
 {"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-09 11:49:27"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:30:42"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-09 13:30:45"}
+{"cause":{},"level":"error","message":"❌ Database connection test failed: Connection terminated due to connection timeout","service":"certificate-management-api","stack":"Error: Connection terminated due to connection timeout\n    at Client._connectionCallback (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:262:17)\n    at Connection.<anonymous> (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg\\lib\\client.js:190:18)\n    at Object.onceWrapper (node:events:622:28)\n    at Connection.emit (node:events:508:28)\n    at Socket.<anonymous> (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg\\lib\\connection.js:61:12)\n    at Socket.emit (node:events:508:28)\n    at TCP.<anonymous> (node:net:346:12)","timestamp":"2026-02-09 13:30:45"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-09 13:30:54"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:30:57"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-09 13:30:58"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:31:18"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-09 13:31:18"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:31:26"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-09 13:31:26"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"Successful login: gulam (admin)","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:31:39"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:31:40"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:31:40"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:31:40"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:31:40"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:31:40"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:31:40"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:36:41"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:36:41"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:36:41"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:36:56"}
+{"action_type":"CREATE","level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:36:56"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:36:59"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:36:59"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:01"}
+{"action_type":"UPDATE","level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:37:01"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:03"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:37:03"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:05"}
+{"action_type":"MIGRATE","level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:37:05"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:06"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:37:06"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:07"}
+{"action_type":"DELETE","level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:37:07"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:11"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:37:11"}
+{"level":"info","message":"GET /api/export/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:37:23"}
+{"level":"info","message":"Exporting certificate logs to Excel","service":"certificate-management-api","timestamp":"2026-02-09 13:37:23"}
+{"level":"info","message":"Certificate logs exported successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:37:24"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:38:13"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:38:13"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:38:13"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:38:38"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:40:43"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:41:50"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:41:51"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:43:34"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:43:35"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:44:55"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-09 13:44:56"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:56:23"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-09 13:56:23"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Successful login: gulam (admin)","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:56:29"}
+{"level":"info","message":"PUT /api/users/username","service":"certificate-management-api","timestamp":"2026-02-09 13:57:16"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:57:16"}
+{"level":"info","message":"Username updated: gulam → gulam123","service":"certificate-management-api","timestamp":"2026-02-09 13:57:17"}
+{"level":"info","message":"PUT /api/users/password","service":"certificate-management-api","timestamp":"2026-02-09 13:57:20"}
+{"level":"info","message":"Password updated successfully for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 13:57:20"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:57:30"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-09 13:57:30"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 13:57:30"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:57:33"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-09 13:57:33"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 13:57:33"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:57:42"}
+{"level":"warn","message":"Failed password attempt for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 13:57:42"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 13:57:42"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Successful login: gulam123 (admin)","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:57:52"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 13:59:57"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 13:59:58"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:00:14"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-09 14:00:14"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:00:14"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:00:22"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-09 14:00:22"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:00:22"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:01:49"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:01:49"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-09 14:01:49"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:01:49"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:04:42"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-09 14:04:42"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:05:01"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:05:02"}
+{"level":"warn","message":"Failed password attempt for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 14:05:02"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:05:02"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:05:05"}
+{"level":"warn","message":"Failed password attempt for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 14:05:05"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:05:05"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:05:09"}
+{"level":"warn","message":"Failed password attempt for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 14:05:09"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:05:09"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:05:09"}
+{"level":"warn","message":"Failed password attempt for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 14:05:09"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:05:09"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:05:10"}
+{"level":"warn","message":"Failed password attempt for user: gulam123","service":"certificate-management-api","timestamp":"2026-02-09 14:05:10"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:05:10"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Successful login: gulam123 (admin)","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 14:05:17"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:07:05"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:07:05"}
+{"level":"warn","message":"Failed login attempt for username: gulam","service":"certificate-management-api","timestamp":"2026-02-09 14:07:05"}
+{"level":"error","message":"Error (401): Invalid credentials","service":"certificate-management-api","timestamp":"2026-02-09 14:07:05"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Successful login: gulam123 (admin)","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Get certificates: limit=1, offset=0","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Returned 1/9 certificates","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Returned 1/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-09 14:07:12"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:16"}
+{"level":"info","message":"Returned 10/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:16"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:32"}
+{"level":"info","message":"Returned 10/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:32"}
+{"level":"info","message":"PUT /api/teachers/12","service":"certificate-management-api","timestamp":"2026-02-09 14:07:43"}
+{"level":"info","message":"Teacher updated: adri","service":"certificate-management-api","timestamp":"2026-02-09 14:07:43"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:43"}
+{"level":"info","message":"Returned 10/15 teachers","service":"certificate-management-api","timestamp":"2026-02-09 14:07:43"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-09 14:07:53"}
+{"level":"info","message":"Successful login: adri (teacher)","service":"certificate-management-api","timestamp":"2026-02-09 14:07:53"}
+{"level":"info","message":"GET /api/printed-certificates/history","service":"certificate-management-api","timestamp":"2026-02-09 14:07:54"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-09 14:09:13"}

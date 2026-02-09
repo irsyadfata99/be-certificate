@@ -2,7 +2,7 @@
 -- CERTIFICATE MANAGEMENT DATABASE - COMPLETE SCHEMA WITH DUMMY DATA
 -- =====================================================
 -- PostgreSQL Database Schema
--- Version: 3.2 (COMPLETE WITH DUMMY DATA)
+-- Version: 3.3 (WITH CASCADE DELETE ON PRINTED_CERTIFICATES)
 -- Updated: February 2026
 -- =====================================================
 -- Admin: username=gulam, password=admin123
@@ -178,7 +178,7 @@ CREATE TABLE printed_certificates (
     id SERIAL PRIMARY KEY,
     certificate_id VARCHAR(50) NOT NULL,
     student_name VARCHAR(100) NOT NULL,
-    module_id INTEGER REFERENCES modules(id) ON DELETE RESTRICT,
+    module_id INTEGER REFERENCES modules(id) ON DELETE CASCADE,
     ptc_date DATE NOT NULL,
     printed_by INTEGER REFERENCES users(id) ON DELETE RESTRICT,
     branch VARCHAR(10) NOT NULL CHECK (branch IN ('SND', 'MKW', 'KBP')),
@@ -510,6 +510,24 @@ LIMIT 10;
 SELECT '=== PRINTED CERTIFICATES ===' as info;
 SELECT COUNT(*) as total_printed FROM printed_certificates;
 
+-- Verify foreign key constraints
+SELECT '=== FOREIGN KEY CONSTRAINTS ===' as info;
+SELECT 
+    conname AS constraint_name,
+    conrelid::regclass AS table_name,
+    confrelid::regclass AS foreign_table,
+    CASE confdeltype
+        WHEN 'c' THEN 'CASCADE'
+        WHEN 'r' THEN 'RESTRICT'
+        WHEN 'n' THEN 'NO ACTION'
+        WHEN 'a' THEN 'SET NULL'
+        WHEN 'd' THEN 'SET DEFAULT'
+    END AS delete_action
+FROM pg_constraint
+WHERE contype = 'f' 
+    AND conrelid::regclass::text IN ('printed_certificates', 'module_logs')
+ORDER BY conrelid::regclass::text, conname;
+
 -- =====================================================
 -- END OF SCHEMA
 -- =====================================================
@@ -530,6 +548,22 @@ SELECT COUNT(*) as total_printed FROM printed_certificates;
 --   Password: admin123
 -- 
 -- =====================================================
+-- IMPORTANT NOTES - CASCADE DELETE
+-- =====================================================
+-- 
+-- PERHATIAN: Versi ini menggunakan ON DELETE CASCADE untuk:
+-- 1. printed_certificates.module_id -> modules.id
+-- 2. module_logs.module_id -> modules.id
+-- 
+-- Artinya:
+-- - Jika module dihapus, semua printed_certificates yang terkait 
+--   akan OTOMATIS TERHAPUS
+-- - Jika module dihapus, semua module_logs yang terkait 
+--   akan OTOMATIS TERHAPUS
+-- 
+-- BACKUP DATABASE secara berkala!
+-- 
+-- =====================================================
 -- INSTALLATION
 -- =====================================================
 -- 
@@ -540,7 +574,7 @@ SELECT COUNT(*) as total_printed FROM printed_certificates;
 --    CREATE DATABASE certificate_management;
 -- 
 -- 3. Run this script:
---    psql -U postgres -d certificate_management -f schema-complete-with-dummy-data.sql
+--    psql -U postgres -d certificate_management -f schema-complete-with-cascade.sql
 -- 
 -- 4. Verify:
 --    psql -U postgres -d certificate_management
