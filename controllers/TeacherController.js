@@ -8,6 +8,7 @@ const crypto = require("crypto");
 
 const TeacherController = {
   // Get all teachers with pagination and filters
+  // UPDATED: Now includes branches & divisions arrays
   getAllTeachers: async (req, res) => {
     try {
       // Map snake_case to camelCase
@@ -26,33 +27,33 @@ const TeacherController = {
       });
 
       // Build WHERE clause
-      let whereConditions = ["role = 'teacher'"];
+      let whereConditions = ["u.role = 'teacher'"];
       let queryParams = [];
       let paramCount = 1;
 
-      // Search filter (username OR teacher_name OR teacher_branch) - CASE INSENSITIVE
+      // Search filter (username OR teacher_name) - CASE INSENSITIVE
       if (search && search.trim()) {
         const searchTerm = `%${search.trim().toLowerCase()}%`;
-        whereConditions.push(`(LOWER(username) LIKE $${paramCount} OR LOWER(teacher_name) LIKE $${paramCount} OR LOWER(teacher_branch) LIKE $${paramCount})`);
+        whereConditions.push(`(LOWER(u.username) LIKE $${paramCount} OR LOWER(u.teacher_name) LIKE $${paramCount})`);
         queryParams.push(searchTerm);
         paramCount++;
         logger.debug("Search filter applied:", searchTerm);
       }
 
-      // Division filter
+      // UPDATED: Division filter - now checks in teacher_divisions table
       if (division && division.trim()) {
         const divisionValidation = validators.validateDivision(division);
         if (divisionValidation.valid) {
-          whereConditions.push(`teacher_division = $${paramCount}`);
+          whereConditions.push(`EXISTS (SELECT 1 FROM teacher_divisions td WHERE td.teacher_id = u.id AND td.division = $${paramCount})`);
           queryParams.push(divisionValidation.value);
           paramCount++;
           logger.debug("Division filter applied:", divisionValidation.value);
         }
       }
 
-      // Branch filter
+      // UPDATED: Branch filter - now checks in teacher_branches table
       if (branch && branch.trim()) {
-        whereConditions.push(`teacher_branch = $${paramCount}`);
+        whereConditions.push(`EXISTS (SELECT 1 FROM teacher_branches tb JOIN branches b ON tb.branch_id = b.id WHERE tb.teacher_id = u.id AND b.branch_code = $${paramCount})`);
         queryParams.push(branch.trim().toUpperCase());
         paramCount++;
         logger.debug("Branch filter applied:", branch.trim().toUpperCase());
@@ -64,7 +65,7 @@ const TeacherController = {
       logger.debug("Query params:", queryParams);
 
       // Get total count with filters
-      const countQuery = `SELECT COUNT(*) FROM users ${whereClause}`;
+      const countQuery = `SELECT COUNT(*) FROM users u ${whereClause}`;
       logger.debug("Count query:", countQuery);
 
       const countResult = await pool.query(countQuery, queryParams);
@@ -72,13 +73,36 @@ const TeacherController = {
 
       logger.debug("Total teachers matching filter:", totalTeachers);
 
-      // Get paginated teachers with filters
+      // UPDATED: Get paginated teachers with branches & divisions arrays
       const dataQuery = `
-        SELECT id, username, teacher_name, teacher_division, teacher_branch,
-               created_at, updated_at
-        FROM users
+        SELECT 
+          u.id, 
+          u.username, 
+          u.teacher_name,
+          u.teacher_division as legacy_division,
+          u.teacher_branch as legacy_branch,
+          u.created_at, 
+          u.updated_at,
+          COALESCE(
+            (SELECT json_agg(DISTINCT td.division ORDER BY td.division)
+             FROM teacher_divisions td
+             WHERE td.teacher_id = u.id),
+            '[]'::json
+          ) as divisions,
+          COALESCE(
+            (SELECT json_agg(json_build_object(
+               'branch_id', b.id,
+               'branch_code', b.branch_code,
+               'branch_name', b.branch_name
+             ) ORDER BY b.branch_name)
+             FROM teacher_branches tb
+             JOIN branches b ON tb.branch_id = b.id
+             WHERE tb.teacher_id = u.id),
+            '[]'::json
+          ) as branches
+        FROM users u
         ${whereClause}
-        ORDER BY created_at DESC
+        ORDER BY u.created_at DESC
         LIMIT $${paramCount} OFFSET $${paramCount + 1}
       `;
 
@@ -113,6 +137,7 @@ const TeacherController = {
   },
 
   // Get single teacher by ID
+  // UPDATED: Now includes branches & divisions arrays
   getTeacherById: async (req, res) => {
     try {
       const { id } = req.params;
@@ -122,11 +147,35 @@ const TeacherController = {
         return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid teacher ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
       }
 
+      // UPDATED: Include branches & divisions arrays
       const result = await pool.query(
-        `SELECT id, username, teacher_name, teacher_division, teacher_branch,
-                created_at, updated_at
-         FROM users
-         WHERE id = $1 AND role = 'teacher'`,
+        `SELECT 
+          u.id, 
+          u.username, 
+          u.teacher_name,
+          u.teacher_division as legacy_division,
+          u.teacher_branch as legacy_branch,
+          u.created_at, 
+          u.updated_at,
+          COALESCE(
+            (SELECT json_agg(DISTINCT td.division ORDER BY td.division)
+             FROM teacher_divisions td
+             WHERE td.teacher_id = u.id),
+            '[]'::json
+          ) as divisions,
+          COALESCE(
+            (SELECT json_agg(json_build_object(
+               'branch_id', b.id,
+               'branch_code', b.branch_code,
+               'branch_name', b.branch_name
+             ) ORDER BY b.branch_name)
+             FROM teacher_branches tb
+             JOIN branches b ON tb.branch_id = b.id
+             WHERE tb.teacher_id = u.id),
+            '[]'::json
+          ) as branches
+         FROM users u
+         WHERE u.id = $1 AND u.role = 'teacher'`,
         [teacherId],
       );
 
@@ -140,7 +189,7 @@ const TeacherController = {
     }
   },
 
-  // Create new teacher
+  // UPDATED: Create new teacher - now handles multiple branches & divisions
   createTeacher: async (req, res) => {
     const client = await pool.connect();
 
@@ -148,12 +197,35 @@ const TeacherController = {
       await client.query("BEGIN");
       await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
 
-      const { username, teacher_name: teacherName, teacher_division: teacherDivision, teacher_branch: teacherBranch } = req.body;
+      const {
+        username,
+        teacher_name: teacherName,
+        teacher_division: teacherDivision,
+        teacher_branch: teacherBranch,
+        // UPDATED: New fields for multi-assignment
+        divisions, // array of 'JK', 'LK'
+        branch_ids, // array of branch IDs
+      } = req.body;
 
       // Validation
-      if (!username || !teacherName || !teacherDivision || !teacherBranch) {
+      if (!username || !teacherName) {
         await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "All fields are required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Username and teacher name are required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      }
+
+      // UPDATED: For backward compatibility, accept either old fields OR new arrays
+      const useDivisions = divisions && Array.isArray(divisions) && divisions.length > 0;
+      const useBranchIds = branch_ids && Array.isArray(branch_ids) && branch_ids.length > 0;
+
+      // If using old format, require old fields
+      if (!useDivisions && !teacherDivision) {
+        await client.query("ROLLBACK");
+        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Either teacher_division or divisions array is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      }
+
+      if (!useBranchIds && !teacherBranch) {
+        await client.query("ROLLBACK");
+        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Either teacher_branch or branch_ids array is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Validate username
@@ -163,17 +235,63 @@ const TeacherController = {
         return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, usernameValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // Validate division
-      const divisionValidation = validators.validateDivision(teacherDivision);
-      if (!divisionValidation.valid) {
-        await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, divisionValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
-      }
-
       const cleanUsername = usernameValidation.value;
       const cleanName = teacherName.trim();
-      const cleanDivision = divisionValidation.value;
-      const cleanBranch = teacherBranch.trim().toUpperCase();
+
+      // UPDATED: Validate divisions array
+      let validatedDivisions = [];
+      if (useDivisions) {
+        for (const div of divisions) {
+          const divValidation = validators.validateDivision(div);
+          if (!divValidation.valid) {
+            await client.query("ROLLBACK");
+            return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Invalid division: ${div}`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+          }
+          if (!validatedDivisions.includes(divValidation.value)) {
+            validatedDivisions.push(divValidation.value);
+          }
+        }
+      } else {
+        // Use old single division
+        const divValidation = validators.validateDivision(teacherDivision);
+        if (!divValidation.valid) {
+          await client.query("ROLLBACK");
+          return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, divValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        }
+        validatedDivisions = [divValidation.value];
+      }
+
+      // UPDATED: Validate branch_ids array
+      let validatedBranchIds = [];
+      if (useBranchIds) {
+        for (const branchId of branch_ids) {
+          const branchIdNum = parseInt(branchId);
+          if (isNaN(branchIdNum)) {
+            await client.query("ROLLBACK");
+            return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Invalid branch ID: ${branchId}`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+          }
+
+          // Check if branch exists
+          const branchCheck = await client.query("SELECT id, branch_code FROM branches WHERE id = $1", [branchIdNum]);
+          if (branchCheck.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, `Branch not found: ${branchId}`, CONSTANTS.ERROR_CODES.NOT_FOUND);
+          }
+
+          if (!validatedBranchIds.includes(branchIdNum)) {
+            validatedBranchIds.push(branchIdNum);
+          }
+        }
+      } else {
+        // Use old single branch - need to get branch_id from branch code
+        const branchCode = teacherBranch.trim().toUpperCase();
+        const branchCheck = await client.query("SELECT id FROM branches WHERE branch_code = $1", [branchCode]);
+        if (branchCheck.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, `Branch not found: ${branchCode}`, CONSTANTS.ERROR_CODES.NOT_FOUND);
+        }
+        validatedBranchIds = [branchCheck.rows[0].id];
+      }
 
       // Check if username already exists
       const existingUser = await client.query("SELECT id FROM users WHERE username = $1", [cleanUsername]);
@@ -187,20 +305,68 @@ const TeacherController = {
       const generatedPassword = crypto.randomBytes(8).toString("hex").substring(0, 12);
       const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-      // Insert new teacher
+      // UPDATED: Insert new teacher - keep legacy fields for backward compatibility
+      const legacyDivision = validatedDivisions[0]; // Use first division as legacy
+      const legacyBranchId = validatedBranchIds[0]; // Use first branch as legacy
+      const legacyBranchResult = await client.query("SELECT branch_code FROM branches WHERE id = $1", [legacyBranchId]);
+      const legacyBranch = legacyBranchResult.rows[0].branch_code;
+
       const result = await client.query(
         `INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch)
          VALUES ($1, $2, 'teacher', $3, $4, $5)
          RETURNING id, username, teacher_name, teacher_division, teacher_branch, created_at`,
-        [cleanUsername, hashedPassword, cleanName, cleanDivision, cleanBranch],
+        [cleanUsername, hashedPassword, cleanName, legacyDivision, legacyBranch],
+      );
+
+      const teacherId = result.rows[0].id;
+
+      // UPDATED: Insert into teacher_divisions
+      for (const division of validatedDivisions) {
+        await client.query("INSERT INTO teacher_divisions (teacher_id, division) VALUES ($1, $2) ON CONFLICT DO NOTHING", [teacherId, division]);
+      }
+
+      // UPDATED: Insert into teacher_branches
+      for (const branchId of validatedBranchIds) {
+        await client.query("INSERT INTO teacher_branches (teacher_id, branch_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [teacherId, branchId]);
+      }
+
+      // Get full teacher data with arrays
+      const fullTeacher = await client.query(
+        `SELECT 
+          u.id, 
+          u.username, 
+          u.teacher_name,
+          u.teacher_division as legacy_division,
+          u.teacher_branch as legacy_branch,
+          u.created_at,
+          COALESCE(
+            (SELECT json_agg(DISTINCT td.division ORDER BY td.division)
+             FROM teacher_divisions td
+             WHERE td.teacher_id = u.id),
+            '[]'::json
+          ) as divisions,
+          COALESCE(
+            (SELECT json_agg(json_build_object(
+               'branch_id', b.id,
+               'branch_code', b.branch_code,
+               'branch_name', b.branch_name
+             ) ORDER BY b.branch_name)
+             FROM teacher_branches tb
+             JOIN branches b ON tb.branch_id = b.id
+             WHERE tb.teacher_id = u.id),
+            '[]'::json
+          ) as branches
+         FROM users u
+         WHERE u.id = $1`,
+        [teacherId],
       );
 
       await client.query("COMMIT");
 
-      logger.info(`Teacher created: ${cleanUsername}`);
+      logger.info(`Teacher created: ${cleanUsername} with ${validatedDivisions.length} divisions and ${validatedBranchIds.length} branches`);
 
       return sendSuccess(res, "Teacher created successfully", {
-        ...result.rows[0],
+        ...fullTeacher.rows[0],
         generatedPassword, // Return password only once
       });
     } catch (error) {
@@ -218,7 +384,7 @@ const TeacherController = {
     }
   },
 
-  // Update teacher
+  // UPDATED: Update teacher - now handles multiple branches & divisions
   updateTeacher: async (req, res) => {
     const client = await pool.connect();
 
@@ -234,12 +400,21 @@ const TeacherController = {
         return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid teacher ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
       }
 
-      const { username, teacher_name: teacherName, teacher_division: teacherDivision, teacher_branch: teacherBranch, new_password: newPassword } = req.body;
+      const {
+        username,
+        teacher_name: teacherName,
+        teacher_division: teacherDivision,
+        teacher_branch: teacherBranch,
+        new_password: newPassword,
+        // UPDATED: New fields for multi-assignment
+        divisions, // array of 'JK', 'LK'
+        branch_ids, // array of branch IDs
+      } = req.body;
 
       // Validation
-      if (!username || !teacherName || !teacherDivision || !teacherBranch) {
+      if (!username || !teacherName) {
         await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "All fields are required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Username and teacher name are required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Validate username
@@ -249,17 +424,8 @@ const TeacherController = {
         return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, usernameValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // Validate division
-      const divisionValidation = validators.validateDivision(teacherDivision);
-      if (!divisionValidation.valid) {
-        await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, divisionValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
-      }
-
       const cleanUsername = usernameValidation.value;
       const cleanName = teacherName.trim();
-      const cleanDivision = divisionValidation.value;
-      const cleanBranch = teacherBranch.trim().toUpperCase();
 
       // Check if teacher exists
       const existingTeacher = await client.query("SELECT id FROM users WHERE id = $1 AND role = 'teacher'", [teacherId]);
@@ -277,6 +443,70 @@ const TeacherController = {
         return sendError(res, CONSTANTS.HTTP_STATUS.CONFLICT, "Username already exists", CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY);
       }
 
+      // UPDATED: Handle divisions update
+      const useDivisions = divisions && Array.isArray(divisions) && divisions.length > 0;
+      let validatedDivisions = [];
+      let legacyDivision = teacherDivision;
+
+      if (useDivisions) {
+        for (const div of divisions) {
+          const divValidation = validators.validateDivision(div);
+          if (!divValidation.valid) {
+            await client.query("ROLLBACK");
+            return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Invalid division: ${div}`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+          }
+          if (!validatedDivisions.includes(divValidation.value)) {
+            validatedDivisions.push(divValidation.value);
+          }
+        }
+        legacyDivision = validatedDivisions[0]; // Use first as legacy
+      } else if (teacherDivision) {
+        const divValidation = validators.validateDivision(teacherDivision);
+        if (!divValidation.valid) {
+          await client.query("ROLLBACK");
+          return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, divValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        }
+        validatedDivisions = [divValidation.value];
+        legacyDivision = divValidation.value;
+      }
+
+      // UPDATED: Handle branches update
+      const useBranchIds = branch_ids && Array.isArray(branch_ids) && branch_ids.length > 0;
+      let validatedBranchIds = [];
+      let legacyBranch = teacherBranch;
+
+      if (useBranchIds) {
+        for (const branchId of branch_ids) {
+          const branchIdNum = parseInt(branchId);
+          if (isNaN(branchIdNum)) {
+            await client.query("ROLLBACK");
+            return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Invalid branch ID: ${branchId}`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+          }
+
+          const branchCheck = await client.query("SELECT id, branch_code FROM branches WHERE id = $1", [branchIdNum]);
+          if (branchCheck.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, `Branch not found: ${branchId}`, CONSTANTS.ERROR_CODES.NOT_FOUND);
+          }
+
+          if (!validatedBranchIds.includes(branchIdNum)) {
+            validatedBranchIds.push(branchIdNum);
+          }
+        }
+        // Get branch code for legacy field
+        const legacyBranchResult = await client.query("SELECT branch_code FROM branches WHERE id = $1", [validatedBranchIds[0]]);
+        legacyBranch = legacyBranchResult.rows[0].branch_code;
+      } else if (teacherBranch) {
+        const branchCode = teacherBranch.trim().toUpperCase();
+        const branchCheck = await client.query("SELECT id FROM branches WHERE branch_code = $1", [branchCode]);
+        if (branchCheck.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, `Branch not found: ${branchCode}`, CONSTANTS.ERROR_CODES.NOT_FOUND);
+        }
+        validatedBranchIds = [branchCheck.rows[0].id];
+        legacyBranch = branchCode;
+      }
+
       // Update teacher (with or without password)
       let result;
       if (newPassword && newPassword.trim()) {
@@ -287,7 +517,7 @@ const TeacherController = {
                teacher_branch = $4, password = $5, updated_at = CURRENT_TIMESTAMP
            WHERE id = $6
            RETURNING id, username, teacher_name, teacher_division, teacher_branch, updated_at`,
-          [cleanUsername, cleanName, cleanDivision, cleanBranch, hashedPassword, teacherId],
+          [cleanUsername, cleanName, legacyDivision, legacyBranch, hashedPassword, teacherId],
         );
       } else {
         result = await client.query(
@@ -296,15 +526,66 @@ const TeacherController = {
                teacher_branch = $4, updated_at = CURRENT_TIMESTAMP
            WHERE id = $5
            RETURNING id, username, teacher_name, teacher_division, teacher_branch, updated_at`,
-          [cleanUsername, cleanName, cleanDivision, cleanBranch, teacherId],
+          [cleanUsername, cleanName, legacyDivision, legacyBranch, teacherId],
         );
       }
+
+      // UPDATED: Update teacher_divisions if provided
+      if (validatedDivisions.length > 0) {
+        // Delete existing divisions
+        await client.query("DELETE FROM teacher_divisions WHERE teacher_id = $1", [teacherId]);
+        // Insert new divisions
+        for (const division of validatedDivisions) {
+          await client.query("INSERT INTO teacher_divisions (teacher_id, division) VALUES ($1, $2)", [teacherId, division]);
+        }
+      }
+
+      // UPDATED: Update teacher_branches if provided
+      if (validatedBranchIds.length > 0) {
+        // Delete existing branches
+        await client.query("DELETE FROM teacher_branches WHERE teacher_id = $1", [teacherId]);
+        // Insert new branches
+        for (const branchId of validatedBranchIds) {
+          await client.query("INSERT INTO teacher_branches (teacher_id, branch_id) VALUES ($1, $2)", [teacherId, branchId]);
+        }
+      }
+
+      // Get full teacher data with arrays
+      const fullTeacher = await client.query(
+        `SELECT 
+          u.id, 
+          u.username, 
+          u.teacher_name,
+          u.teacher_division as legacy_division,
+          u.teacher_branch as legacy_branch,
+          u.updated_at,
+          COALESCE(
+            (SELECT json_agg(DISTINCT td.division ORDER BY td.division)
+             FROM teacher_divisions td
+             WHERE td.teacher_id = u.id),
+            '[]'::json
+          ) as divisions,
+          COALESCE(
+            (SELECT json_agg(json_build_object(
+               'branch_id', b.id,
+               'branch_code', b.branch_code,
+               'branch_name', b.branch_name
+             ) ORDER BY b.branch_name)
+             FROM teacher_branches tb
+             JOIN branches b ON tb.branch_id = b.id
+             WHERE tb.teacher_id = u.id),
+            '[]'::json
+          ) as branches
+         FROM users u
+         WHERE u.id = $1`,
+        [teacherId],
+      );
 
       await client.query("COMMIT");
 
       logger.info(`Teacher updated: ${cleanUsername}`);
 
-      return sendSuccess(res, "Teacher updated successfully", result.rows[0]);
+      return sendSuccess(res, "Teacher updated successfully", fullTeacher.rows[0]);
     } catch (error) {
       await client.query("ROLLBACK");
 
@@ -319,7 +600,7 @@ const TeacherController = {
     }
   },
 
-  // Delete teacher
+  // Delete teacher - NO CHANGES NEEDED
   deleteTeacher: async (req, res) => {
     const client = await pool.connect();
 
@@ -345,7 +626,7 @@ const TeacherController = {
 
       const teacherData = existingTeacher.rows[0];
 
-      // Delete teacher
+      // Delete teacher (CASCADE will handle teacher_branches and teacher_divisions)
       await client.query("DELETE FROM users WHERE id = $1", [teacherId]);
 
       await client.query("COMMIT");
@@ -361,7 +642,7 @@ const TeacherController = {
     }
   },
 
-  // Get teacher statistics
+  // Get teacher statistics - NO CHANGES NEEDED
   getTeacherStats: async (req, res) => {
     try {
       const stats = await pool.query(`

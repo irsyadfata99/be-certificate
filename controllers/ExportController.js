@@ -1,3 +1,6 @@
+// controllers/ExportController.js - UPDATED for Phase 4
+// Added student export functions
+
 const pool = require("../config/database");
 const ExcelJS = require("exceljs");
 const logger = require("../utils/logger");
@@ -35,27 +38,30 @@ const autoFitColumns = (worksheet) => {
 };
 
 // =====================================================
-// 1. EXPORT CERTIFICATES
+// 1. EXPORT CERTIFICATES (UPDATED for new structure)
 // =====================================================
 const exportCertificates = async (req, res) => {
   try {
     logger.info("Exporting certificates to Excel");
 
+    // UPDATED: Use new certificate_stock table
     const result = await pool.query(`
       SELECT 
-        certificate_id as "Batch ID",
-        jumlah_sertifikat_snd as "SND Certificates",
-        jumlah_medali_snd as "SND Medals",
-        jumlah_sertifikat_mkw as "MKW Certificates",
-        jumlah_medali_mkw as "MKW Medals",
-        jumlah_sertifikat_kbp as "KBP Certificates",
-        jumlah_medali_kbp as "KBP Medals",
-        (jumlah_sertifikat_snd + jumlah_sertifikat_mkw + jumlah_sertifikat_kbp) as "Total Certificates",
-        (jumlah_medali_snd + jumlah_medali_mkw + jumlah_medali_kbp) as "Total Medals",
-        created_at as "Created At",
-        updated_at as "Updated At"
-      FROM certificates
-      ORDER BY created_at DESC
+        c.certificate_id as "Batch ID",
+        c.created_at as "Created At",
+        c.updated_at as "Updated At",
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'branch', cs.branch_code,
+            'certificates', cs.jumlah_sertifikat,
+            'medals', cs.jumlah_medali
+          ) ORDER BY cs.branch_code)
+          FROM certificate_stock cs
+          WHERE cs.certificate_id = c.certificate_id),
+          '[]'::json
+        ) as "Stock by Branch"
+      FROM certificates c
+      ORDER BY c.created_at DESC
     `);
 
     const workbook = new ExcelJS.Workbook();
@@ -63,46 +69,36 @@ const exportCertificates = async (req, res) => {
 
     worksheet.columns = [
       { header: "Batch ID", key: "Batch ID", width: 15 },
-      { header: "SND Certificates", key: "SND Certificates", width: 18 },
-      { header: "SND Medals", key: "SND Medals", width: 15 },
-      { header: "MKW Certificates", key: "MKW Certificates", width: 18 },
-      { header: "MKW Medals", key: "MKW Medals", width: 15 },
-      { header: "KBP Certificates", key: "KBP Certificates", width: 18 },
-      { header: "KBP Medals", key: "KBP Medals", width: 15 },
-      { header: "Total Certificates", key: "Total Certificates", width: 18 },
-      { header: "Total Medals", key: "Total Medals", width: 15 },
+      { header: "Stock by Branch", key: "Stock by Branch", width: 50 },
       { header: "Created At", key: "Created At", width: 20 },
       { header: "Updated At", key: "Updated At", width: 20 },
     ];
 
     result.rows.forEach((row) => {
-      worksheet.addRow(row);
+      // Convert JSON to readable string
+      const stockByBranch = JSON.parse(row["Stock by Branch"]);
+      const stockStr = stockByBranch.map((s) => `${s.branch}: ${s.certificates} certs, ${s.medals} medals`).join("; ");
+
+      worksheet.addRow({
+        "Batch ID": row["Batch ID"],
+        "Stock by Branch": stockStr,
+        "Created At": row["Created At"],
+        "Updated At": row["Updated At"],
+      });
     });
 
     formatHeader(worksheet);
     autoFitColumns(worksheet);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=certificates_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=certificates_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     await workbook.xlsx.write(res);
     logger.info("Certificates exported successfully");
     res.end();
   } catch (error) {
     logger.error("Export certificates error:", error);
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to export certificates",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export certificates", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -150,49 +146,45 @@ const exportCertificateLogs = async (req, res) => {
     formatHeader(worksheet);
     autoFitColumns(worksheet);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=certificate_logs_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=certificate_logs_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     await workbook.xlsx.write(res);
     logger.info("Certificate logs exported successfully");
     res.end();
   } catch (error) {
     logger.error("Export certificate logs error:", error);
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to export certificate logs",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export certificate logs", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
 // =====================================================
-// 3. EXPORT TEACHERS
+// 3. EXPORT TEACHERS (UPDATED for multi-assignment)
 // =====================================================
 const exportTeachers = async (req, res) => {
   try {
     logger.info("Exporting teachers to Excel");
 
+    // UPDATED: Include branches and divisions arrays
     const result = await pool.query(`
       SELECT 
-        id as "ID",
-        username as "Username",
-        teacher_name as "Teacher Name",
-        teacher_division as "Division",
-        teacher_branch as "Branch",
-        created_at as "Created At",
-        updated_at as "Updated At"
-      FROM users
-      WHERE role = 'teacher'
-      ORDER BY created_at DESC
+        u.id as "ID",
+        u.username as "Username",
+        u.teacher_name as "Teacher Name",
+        ARRAY_TO_STRING(
+          ARRAY_AGG(DISTINCT td.division ORDER BY td.division), ', '
+        ) as "Divisions",
+        ARRAY_TO_STRING(
+          ARRAY_AGG(DISTINCT tb.branch_code ORDER BY tb.branch_code), ', '
+        ) as "Branches",
+        u.created_at as "Created At",
+        u.updated_at as "Updated At"
+      FROM users u
+      LEFT JOIN teacher_divisions td ON u.id = td.teacher_id
+      LEFT JOIN teacher_branches tb ON u.id = tb.teacher_id
+      WHERE u.role = 'teacher'
+      GROUP BY u.id, u.username, u.teacher_name, u.created_at, u.updated_at
+      ORDER BY u.created_at DESC
     `);
 
     const workbook = new ExcelJS.Workbook();
@@ -202,8 +194,8 @@ const exportTeachers = async (req, res) => {
       { header: "ID", key: "ID", width: 8 },
       { header: "Username", key: "Username", width: 15 },
       { header: "Teacher Name", key: "Teacher Name", width: 25 },
-      { header: "Division", key: "Division", width: 10 },
-      { header: "Branch", key: "Branch", width: 10 },
+      { header: "Divisions", key: "Divisions", width: 15 },
+      { header: "Branches", key: "Branches", width: 20 },
       { header: "Created At", key: "Created At", width: 20 },
       { header: "Updated At", key: "Updated At", width: 20 },
     ];
@@ -215,27 +207,15 @@ const exportTeachers = async (req, res) => {
     formatHeader(worksheet);
     autoFitColumns(worksheet);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=teachers_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=teachers_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     await workbook.xlsx.write(res);
     logger.info("Teachers exported successfully");
     res.end();
   } catch (error) {
     logger.error("Export teachers error:", error);
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to export teachers",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export teachers", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -281,32 +261,20 @@ const exportModules = async (req, res) => {
     formatHeader(worksheet);
     autoFitColumns(worksheet);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=modules_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=modules_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     await workbook.xlsx.write(res);
     logger.info("Modules exported successfully");
     res.end();
   } catch (error) {
     logger.error("Export modules error:", error);
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to export modules",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export modules", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
 // =====================================================
-// 5. EXPORT PRINTED CERTIFICATES
+// 5. EXPORT PRINTED CERTIFICATES (UPDATED with student_id)
 // =====================================================
 const exportPrintedCertificates = async (req, res) => {
   try {
@@ -321,6 +289,7 @@ const exportPrintedCertificates = async (req, res) => {
         pc.id as "ID",
         pc.certificate_id as "Certificate ID",
         pc.student_name as "Student Name",
+        pc.student_id as "Student ID",
         m.module_code as "Module Code",
         m.module_name as "Module Name",
         pc.ptc_date as "PTC Date",
@@ -353,6 +322,7 @@ const exportPrintedCertificates = async (req, res) => {
       { header: "ID", key: "ID", width: 8 },
       { header: "Certificate ID", key: "Certificate ID", width: 15 },
       { header: "Student Name", key: "Student Name", width: 25 },
+      { header: "Student ID", key: "Student ID", width: 12 },
       { header: "Module Code", key: "Module Code", width: 15 },
       { header: "Module Name", key: "Module Name", width: 35 },
       { header: "PTC Date", key: "PTC Date", width: 12 },
@@ -368,32 +338,210 @@ const exportPrintedCertificates = async (req, res) => {
     formatHeader(worksheet);
     autoFitColumns(worksheet);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=printed_certificates_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=printed_certificates_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     await workbook.xlsx.write(res);
     logger.info("Printed certificates exported successfully");
     res.end();
   } catch (error) {
     logger.error("Export printed certificates error:", error);
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to export printed certificates",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export printed certificates", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
 // =====================================================
-// 6. EXPORT ALL DATA (MULTI-SHEET)
+// NEW: 6. EXPORT STUDENTS
+// =====================================================
+const exportStudents = async (req, res) => {
+  try {
+    logger.info("Exporting students to Excel");
+
+    const { branch_code: branchCode } = req.query;
+
+    let query = `
+      SELECT 
+        s.id as "ID",
+        s.student_name as "Student Name",
+        s.branch_code as "Branch Code",
+        b.branch_name as "Branch Name",
+        s.status as "Status",
+        COUNT(sm.id) as "Modules Completed",
+        s.created_at as "Created At",
+        s.updated_at as "Updated At"
+      FROM students s
+      LEFT JOIN branches b ON s.branch_code = b.branch_code
+      LEFT JOIN student_modules sm ON s.id = sm.student_id
+    `;
+
+    let queryParams = [];
+
+    if (branchCode && branchCode.trim()) {
+      query += " WHERE s.branch_code = $1";
+      queryParams.push(branchCode.trim().toUpperCase());
+    }
+
+    query += `
+      GROUP BY s.id, s.student_name, s.branch_code, b.branch_name, s.status, s.created_at, s.updated_at
+      ORDER BY s.branch_code, s.student_name
+    `;
+
+    const result = await pool.query(query, queryParams);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Students");
+
+    worksheet.columns = [
+      { header: "ID", key: "ID", width: 8 },
+      { header: "Student Name", key: "Student Name", width: 30 },
+      { header: "Branch Code", key: "Branch Code", width: 12 },
+      { header: "Branch Name", key: "Branch Name", width: 25 },
+      { header: "Status", key: "Status", width: 12 },
+      { header: "Modules Completed", key: "Modules Completed", width: 18 },
+      { header: "Created At", key: "Created At", width: 20 },
+      { header: "Updated At", key: "Updated At", width: 20 },
+    ];
+
+    result.rows.forEach((row) => {
+      worksheet.addRow(row);
+    });
+
+    formatHeader(worksheet);
+    autoFitColumns(worksheet);
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=students_${branchCode || "all"}_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    await workbook.xlsx.write(res);
+    logger.info("Students exported successfully");
+    res.end();
+  } catch (error) {
+    logger.error("Export students error:", error);
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export students", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+  }
+};
+
+// =====================================================
+// NEW: 7. EXPORT STUDENTS BY BRANCH
+// =====================================================
+const exportStudentsByBranch = async (req, res) => {
+  try {
+    const { branch_code: branchCode } = req.params;
+
+    if (!branchCode || !branchCode.trim()) {
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Branch code is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    logger.info(`Exporting students for branch: ${branchCode}`);
+
+    const result = await pool.query(
+      `SELECT 
+        s.id as "ID",
+        s.student_name as "Student Name",
+        s.status as "Status",
+        COUNT(sm.id) as "Modules Completed",
+        ARRAY_TO_STRING(
+          ARRAY_AGG(DISTINCT m.module_code ORDER BY m.module_code), ', '
+        ) as "Completed Modules",
+        s.created_at as "Enrolled At"
+      FROM students s
+      LEFT JOIN student_modules sm ON s.id = sm.student_id
+      LEFT JOIN modules m ON sm.module_id = m.id
+      WHERE s.branch_code = $1
+      GROUP BY s.id, s.student_name, s.status, s.created_at
+      ORDER BY s.student_name`,
+      [branchCode.trim().toUpperCase()],
+    );
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(`Students - ${branchCode}`);
+
+    worksheet.columns = [
+      { header: "ID", key: "ID", width: 8 },
+      { header: "Student Name", key: "Student Name", width: 30 },
+      { header: "Status", key: "Status", width: 12 },
+      { header: "Modules Completed", key: "Modules Completed", width: 18 },
+      { header: "Completed Modules", key: "Completed Modules", width: 50 },
+      { header: "Enrolled At", key: "Enrolled At", width: 20 },
+    ];
+
+    result.rows.forEach((row) => {
+      worksheet.addRow(row);
+    });
+
+    formatHeader(worksheet);
+    autoFitColumns(worksheet);
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=students_${branchCode}_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    await workbook.xlsx.write(res);
+    logger.info(`Students for branch ${branchCode} exported successfully`);
+    res.end();
+  } catch (error) {
+    logger.error("Export students by branch error:", error);
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export students by branch", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+  }
+};
+
+// =====================================================
+// NEW: 8. EXPORT STUDENT TRANSFER HISTORY
+// =====================================================
+const exportStudentTransferHistory = async (req, res) => {
+  try {
+    logger.info("Exporting student transfer history to Excel");
+
+    const result = await pool.query(`
+      SELECT 
+        st.id as "ID",
+        s.student_name as "Student Name",
+        st.from_branch as "From Branch",
+        st.to_branch as "To Branch",
+        st.transfer_date as "Transfer Date",
+        u.username as "Transferred By",
+        st.notes as "Notes",
+        st.created_at as "Created At"
+      FROM student_transfers st
+      JOIN students s ON st.student_id = s.id
+      JOIN users u ON st.transferred_by = u.id
+      ORDER BY st.transfer_date DESC, st.created_at DESC
+    `);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Student Transfers");
+
+    worksheet.columns = [
+      { header: "ID", key: "ID", width: 8 },
+      { header: "Student Name", key: "Student Name", width: 30 },
+      { header: "From Branch", key: "From Branch", width: 15 },
+      { header: "To Branch", key: "To Branch", width: 15 },
+      { header: "Transfer Date", key: "Transfer Date", width: 15 },
+      { header: "Transferred By", key: "Transferred By", width: 15 },
+      { header: "Notes", key: "Notes", width: 40 },
+      { header: "Created At", key: "Created At", width: 20 },
+    ];
+
+    result.rows.forEach((row) => {
+      worksheet.addRow(row);
+    });
+
+    formatHeader(worksheet);
+    autoFitColumns(worksheet);
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=student_transfers_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    await workbook.xlsx.write(res);
+    logger.info("Student transfer history exported successfully");
+    res.end();
+  } catch (error) {
+    logger.error("Export student transfer history error:", error);
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export student transfer history", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+  }
+};
+
+// =====================================================
+// 9. EXPORT ALL DATA (MULTI-SHEET) - UPDATED
 // =====================================================
 const exportAllData = async (req, res) => {
   try {
@@ -401,90 +549,103 @@ const exportAllData = async (req, res) => {
 
     const workbook = new ExcelJS.Workbook();
 
-    // Sheet 1: Stock Summary
+    // Sheet 1: Stock Summary (UPDATED)
     const summaryResult = await pool.query(`
       SELECT 
-        'SND' as "Branch",
-        COALESCE(SUM(jumlah_sertifikat_snd), 0) as "Certificates",
-        COALESCE(SUM(jumlah_medali_snd), 0) as "Medals"
-      FROM certificates
-      UNION ALL
-      SELECT 
-        'MKW' as "Branch",
-        COALESCE(SUM(jumlah_sertifikat_mkw), 0) as "Certificates",
-        COALESCE(SUM(jumlah_medali_mkw), 0) as "Medals"
-      FROM certificates
-      UNION ALL
-      SELECT 
-        'KBP' as "Branch",
-        COALESCE(SUM(jumlah_sertifikat_kbp), 0) as "Certificates",
-        COALESCE(SUM(jumlah_medali_kbp), 0) as "Medals"
-      FROM certificates
+        cs.branch_code as "Branch",
+        b.branch_name as "Branch Name",
+        COALESCE(SUM(cs.jumlah_sertifikat), 0) as "Certificates",
+        COALESCE(SUM(cs.jumlah_medali), 0) as "Medals"
+      FROM certificate_stock cs
+      JOIN branches b ON cs.branch_code = b.branch_code
+      GROUP BY cs.branch_code, b.branch_name
+      ORDER BY cs.branch_code
     `);
 
     const summarySheet = workbook.addWorksheet("Stock Summary");
     summarySheet.columns = [
       { header: "Branch", key: "Branch", width: 12 },
+      { header: "Branch Name", key: "Branch Name", width: 20 },
       { header: "Certificates", key: "Certificates", width: 15 },
       { header: "Medals", key: "Medals", width: 15 },
     ];
     summaryResult.rows.forEach((row) => summarySheet.addRow(row));
     formatHeader(summarySheet);
 
-    // Sheet 2: Certificates
-    const certificatesResult = await pool.query(`
+    // Sheet 2: Branches
+    const branchesResult = await pool.query(`
       SELECT 
-        certificate_id as "Batch ID",
-        jumlah_sertifikat_snd as "SND Certificates",
-        jumlah_medali_snd as "SND Medals",
-        jumlah_sertifikat_mkw as "MKW Certificates",
-        jumlah_medali_mkw as "MKW Medals",
-        jumlah_sertifikat_kbp as "KBP Certificates",
-        jumlah_medali_kbp as "KBP Medals",
+        branch_code as "Branch Code",
+        branch_name as "Branch Name",
+        is_active as "Active",
         created_at as "Created At"
-      FROM certificates
-      ORDER BY created_at DESC
+      FROM branches
+      ORDER BY branch_code
     `);
 
-    const certSheet = workbook.addWorksheet("Certificates");
-    certSheet.columns = [
-      { header: "Batch ID", key: "Batch ID", width: 15 },
-      { header: "SND Certificates", key: "SND Certificates", width: 18 },
-      { header: "SND Medals", key: "SND Medals", width: 15 },
-      { header: "MKW Certificates", key: "MKW Certificates", width: 18 },
-      { header: "MKW Medals", key: "MKW Medals", width: 15 },
-      { header: "KBP Certificates", key: "KBP Certificates", width: 18 },
-      { header: "KBP Medals", key: "KBP Medals", width: 15 },
+    const branchSheet = workbook.addWorksheet("Branches");
+    branchSheet.columns = [
+      { header: "Branch Code", key: "Branch Code", width: 12 },
+      { header: "Branch Name", key: "Branch Name", width: 25 },
+      { header: "Active", key: "Active", width: 10 },
       { header: "Created At", key: "Created At", width: 20 },
     ];
-    certificatesResult.rows.forEach((row) => certSheet.addRow(row));
-    formatHeader(certSheet);
+    branchesResult.rows.forEach((row) => branchSheet.addRow(row));
+    formatHeader(branchSheet);
 
-    // Sheet 3: Teachers
+    // Sheet 3: Students
+    const studentsResult = await pool.query(`
+      SELECT 
+        student_name as "Student Name",
+        branch_code as "Branch",
+        status as "Status",
+        created_at as "Created At"
+      FROM students
+      ORDER BY branch_code, student_name
+    `);
+
+    const studentSheet = workbook.addWorksheet("Students");
+    studentSheet.columns = [
+      { header: "Student Name", key: "Student Name", width: 30 },
+      { header: "Branch", key: "Branch", width: 10 },
+      { header: "Status", key: "Status", width: 12 },
+      { header: "Created At", key: "Created At", width: 20 },
+    ];
+    studentsResult.rows.forEach((row) => studentSheet.addRow(row));
+    formatHeader(studentSheet);
+
+    // Sheet 4: Teachers (UPDATED)
     const teachersResult = await pool.query(`
       SELECT 
-        username as "Username",
-        teacher_name as "Teacher Name",
-        teacher_division as "Division",
-        teacher_branch as "Branch",
-        created_at as "Created At"
-      FROM users
-      WHERE role = 'teacher'
-      ORDER BY teacher_branch, teacher_name
+        u.username as "Username",
+        u.teacher_name as "Teacher Name",
+        ARRAY_TO_STRING(
+          ARRAY_AGG(DISTINCT td.division ORDER BY td.division), ', '
+        ) as "Divisions",
+        ARRAY_TO_STRING(
+          ARRAY_AGG(DISTINCT tb.branch_code ORDER BY tb.branch_code), ', '
+        ) as "Branches",
+        u.created_at as "Created At"
+      FROM users u
+      LEFT JOIN teacher_divisions td ON u.id = td.teacher_id
+      LEFT JOIN teacher_branches tb ON u.id = tb.teacher_id
+      WHERE u.role = 'teacher'
+      GROUP BY u.id, u.username, u.teacher_name, u.created_at
+      ORDER BY u.teacher_name
     `);
 
     const teacherSheet = workbook.addWorksheet("Teachers");
     teacherSheet.columns = [
       { header: "Username", key: "Username", width: 15 },
       { header: "Teacher Name", key: "Teacher Name", width: 25 },
-      { header: "Division", key: "Division", width: 10 },
-      { header: "Branch", key: "Branch", width: 10 },
+      { header: "Divisions", key: "Divisions", width: 15 },
+      { header: "Branches", key: "Branches", width: 20 },
       { header: "Created At", key: "Created At", width: 20 },
     ];
     teachersResult.rows.forEach((row) => teacherSheet.addRow(row));
     formatHeader(teacherSheet);
 
-    // Sheet 4: Modules
+    // Sheet 5: Modules
     const modulesResult = await pool.query(`
       SELECT 
         module_code as "Module Code",
@@ -507,27 +668,15 @@ const exportAllData = async (req, res) => {
     modulesResult.rows.forEach((row) => moduleSheet.addRow(row));
     formatHeader(moduleSheet);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=certificate_system_export_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=certificate_system_export_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     await workbook.xlsx.write(res);
     logger.info("All data exported successfully");
     res.end();
   } catch (error) {
     logger.error("Export all data error:", error);
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to export all data",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to export all data", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -537,5 +686,8 @@ module.exports = {
   exportTeachers,
   exportModules,
   exportPrintedCertificates,
+  exportStudents, // NEW
+  exportStudentsByBranch, // NEW
+  exportStudentTransferHistory, // NEW
   exportAllData,
 };

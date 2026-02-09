@@ -3,10 +3,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 const logger = require("./utils/logger");
 const requestTimeout = require("./middleware/timeout");
-const {
-  validateEnvironment,
-  getEnvironmentInfo,
-} = require("./utils/envValidator");
+const { validateEnvironment, getEnvironmentInfo } = require("./utils/envValidator");
 require("dotenv").config();
 
 // =====================================================
@@ -16,9 +13,7 @@ try {
   validateEnvironment();
 } catch (error) {
   console.error("❌ Environment validation failed:", error.message);
-  console.error(
-    "💡 Please check your .env file and ensure all required variables are set",
-  );
+  console.error("💡 Please check your .env file and ensure all required variables are set");
   process.exit(1);
 }
 
@@ -30,6 +25,8 @@ const teacherRoutes = require("./routes/teacherRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
 const printedCertificatesRoutes = require("./routes/printedCertificates");
 const exportRoutes = require("./routes/exportRoutes");
+const studentRoutes = require("./routes/studentRoutes");
+const branchRoutes = require("./routes/branchRoutes");
 
 const app = express();
 
@@ -49,14 +46,7 @@ app.use(requestTimeout(30000));
 // CORS CONFIGURATION
 // =====================================================
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5500",
-  "http://localhost:8080",
-];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5500", "http://localhost:8080"];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -73,13 +63,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Origin",
-    "X-Requested-With",
-    "Content-Type",
-    "Accept",
-    "Authorization",
-  ],
+  allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
 };
 
 app.use(cors(corsOptions));
@@ -132,6 +116,8 @@ app.use("/api/teachers", teacherRoutes);
 app.use("/api/modules", moduleRoutes);
 app.use("/api/printed-certificates", printedCertificatesRoutes);
 app.use("/api/export", exportRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/branches", branchRoutes);
 
 // =====================================================
 // ROOT & HEALTH CHECK
@@ -170,10 +156,7 @@ app.get("/health", (req, res) => {
 
 // Body-parser error handler
 app.use((err, req, res, next) => {
-  if (
-    err.type === "entity.too.large" ||
-    err.message === "Request entity too large"
-  ) {
+  if (err.type === "entity.too.large" || err.message === "Request entity too large") {
     logger.warn(`Request too large: ${req.method} ${req.path}`, {
       ip: req.ip,
       size: req.headers["content-length"],
@@ -245,13 +228,9 @@ const server = app.listen(PORT, () => {
   logger.info(`📊 Summary: http://localhost:${PORT}/api/certificates/summary`);
   logger.info(`👥 Teachers: http://localhost:${PORT}/api/teachers`);
   logger.info(`📚 Modules: http://localhost:${PORT}/api/modules`);
-  logger.info(
-    `📜 Printed Certificates: http://localhost:${PORT}/api/printed-certificates`,
-  );
+  logger.info(`📜 Printed Certificates: http://localhost:${PORT}/api/printed-certificates`);
   logger.info(`📥 Export Data: http://localhost:${PORT}/api/export`);
-  logger.info(
-    `🔄 Refresh Token: http://localhost:${PORT}/api/auth/refresh-token`,
-  );
+  logger.info(`🔄 Refresh Token: http://localhost:${PORT}/api/auth/refresh-token`);
   logger.info("=".repeat(50));
 });
 

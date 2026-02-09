@@ -1,14 +1,9 @@
-// routes/exportRoutes.js
+// routes/exportRoutes.js - UPDATED for Phase 4
+// Added student export endpoints
+
 const express = require("express");
 const router = express.Router();
-const {
-  exportCertificates,
-  exportCertificateLogs,
-  exportTeachers,
-  exportModules,
-  exportPrintedCertificates,
-  exportAllData,
-} = require("../controllers/ExportController");
+const { exportCertificates, exportCertificateLogs, exportTeachers, exportModules, exportPrintedCertificates, exportStudents, exportStudentsByBranch, exportStudentTransferHistory, exportAllData } = require("../controllers/ExportController");
 const { verifyToken, requireAdmin } = require("../auth/AuthMiddleware");
 
 // =====================================================
@@ -37,5 +32,18 @@ router.get("/modules", requireAdmin, exportModules);
 
 // Export printed certificates - Teachers can export their own, Admins can export all in their branch
 router.get("/printed-certificates", exportPrintedCertificates);
+
+// =====================================================
+// NEW: STUDENT EXPORT ENDPOINTS
+// =====================================================
+
+// Export all students (optionally filtered by branch) - Admin only
+router.get("/students", requireAdmin, exportStudents);
+
+// Export students by specific branch - Admin only
+router.get("/students/branch/:branch_code", requireAdmin, exportStudentsByBranch);
+
+// Export student transfer history - Admin only
+router.get("/student-transfers", requireAdmin, exportStudentTransferHistory);
 
 module.exports = router;
