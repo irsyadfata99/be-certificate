@@ -367,8 +367,6 @@ module.exports = {
   createCertificate,
   getAllCertificates,
   getCertificateById,
-  updateCertificate,
-  deleteCertificate,
   clearAllCertificates,
   migrateCertificate,
   getStockSummary,
