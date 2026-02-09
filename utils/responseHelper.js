@@ -32,7 +32,8 @@ function sendSuccess(res, message, data = null, meta = null) {
   if (data !== null) response.data = data;
   if (meta !== null) response.meta = meta;
 
-  return res.json(response);
+  // PENTING: Selalu set status 200 dan disable caching
+  return res.status(200).set("Cache-Control", "no-store, no-cache, must-revalidate, private").set("Pragma", "no-cache").set("Expires", "0").json(response);
 }
 
 module.exports = { sendError, sendSuccess };
