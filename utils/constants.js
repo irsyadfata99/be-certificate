@@ -60,7 +60,13 @@ module.exports = {
   DIVISIONS: ["JK", "LK"],
 
   // Valid branches
-  BRANCHES: ["SND", "MKW", "KBP"],
+  DEFAULT_BRANCHES: {
+    SND: { code: "SND", name: "Sunda", is_central: true },
+    MKW: { code: "MKW", name: "Mekarwangi", is_central: false },
+    KBP: { code: "KBP", name: "Kota Baru Parahyangan", is_central: false },
+  },
+
+  CENTRAL_BRANCH: "SND",
 
   // Valid roles
   ROLES: ["admin", "teacher"],
