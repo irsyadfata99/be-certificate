@@ -2,8 +2,17 @@
 -- CERTIFICATE MANAGEMENT DATABASE - FRESH CLEAN SCHEMA
 -- =====================================================
 -- PostgreSQL Database Schema
--- Version: 4.0 (Complete with Dummy Data)
+-- Version: 4.1 (Complete with Correct Age Ranges)
 -- Created: February 2026
+-- Updated: February 2026 - Fixed Division Age Ranges
+-- =====================================================
+-- DIVISION AGE RANGES:
+-- JK (Junior Koder): 8-16 tahun
+--   - Level 1: 8-12 tahun
+--   - Level 2: 12-16 tahun
+-- LK (Little Koder): 4-8 tahun
+--   - Level 1: 4-6 tahun
+--   - Level 2: 6-8 tahun
 -- =====================================================
 -- DROP AND RECREATE DATABASE
 -- =====================================================
@@ -13,7 +22,7 @@
 -- 2. Run: DROP DATABASE IF EXISTS certificate_db;
 -- 3. Run: CREATE DATABASE certificate_db;
 -- 4. Run: \c certificate_db
--- 5. Run: \i fresh-schema.sql
+-- 5. Run: \i clean-schema-fixed.sql
 
 -- =====================================================
 -- CLEAN START - DROP ALL TABLES
@@ -283,13 +292,19 @@ CREATE INDEX idx_modules_code ON modules(module_code);
 CREATE INDEX idx_modules_division ON modules(division);
 CREATE INDEX idx_modules_age_range ON modules(min_age, max_age);
 
--- Insert 1 module for JK
-INSERT INTO modules (module_code, module_name, division, min_age, max_age) VALUES
-('JK-001', 'Scratch Programming untuk Junior Koder', 'JK', 5, 8);
+-- Insert modules with correct age ranges
+-- JK (Junior Koder): Overall 8-16 tahun
+--   Level 1: 8-12 tahun
+--   Level 2: 12-16 tahun
+-- LK (Little Koder): Overall 4-8 tahun
+--   Level 1: 4-6 tahun
+--   Level 2: 6-8 tahun
 
--- Insert 1 module for LK
 INSERT INTO modules (module_code, module_name, division, min_age, max_age) VALUES
-('LK-001', 'Python Programming untuk Little Koder', 'LK', 9, 12);
+('JK-001', 'Scratch Programming untuk Junior Koder (Level 1)', 'JK', 8, 12),
+('JK-002', 'Advanced Scratch & Game Design untuk Junior Koder (Level 2)', 'JK', 12, 16),
+('LK-001', 'Introduction to Coding untuk Little Koder (Level 1)', 'LK', 4, 6),
+('LK-002', 'Creative Coding & Animation untuk Little Koder (Level 2)', 'LK', 6, 8);
 
 -- =====================================================
 -- 10. MODULE LOGS TABLE
@@ -341,13 +356,13 @@ CREATE INDEX idx_students_status ON students(status);
 CREATE INDEX idx_students_branch_status ON students(branch_id, status);
 CREATE INDEX idx_students_name_search ON students USING gin(to_tsvector('english', student_name));
 
--- Insert 1 student
+-- Insert 1 student (JK division, age 8 = fits 8-12 range)
 INSERT INTO students (student_name, branch_id, division, date_of_birth, parent_name, parent_phone, status)
 SELECT 
     'Budi Santoso',
     b.id,
     'JK',
-    '2018-05-15',
+    CURRENT_DATE - INTERVAL '8 years',  -- Age 8, fits JK Level 1 (8-12)
     'Ahmad Santoso',
     '081234567890',
     'active'
@@ -398,7 +413,7 @@ CREATE INDEX idx_student_modules_branch ON student_modules(branch_id);
 CREATE INDEX idx_student_modules_date ON student_modules(completed_date);
 CREATE INDEX idx_student_modules_certificate ON student_modules(certificate_id);
 
--- Insert 1 completed module for student
+-- Insert 1 completed module for student (JK-001 Level 1)
 INSERT INTO student_modules (student_id, module_id, branch_id, completed_date, certificate_id)
 SELECT 
     s.id,
@@ -435,7 +450,7 @@ CREATE INDEX idx_printed_certificates_branch ON printed_certificates(branch);
 CREATE INDEX idx_printed_certificates_printed_by_branch ON printed_certificates(printed_by, branch);
 CREATE INDEX idx_printed_certificates_ptc_date_branch ON printed_certificates(ptc_date, branch);
 
--- Insert 1 printed certificate
+-- Insert 1 printed certificate (JK-001 Level 1)
 INSERT INTO printed_certificates (certificate_id, student_id, student_name, module_id, ptc_date, printed_by, branch)
 SELECT 
     'BATCH-2026-001',
@@ -744,7 +759,8 @@ ORDER BY s.student_name;
 -- =====================================================
 INSERT INTO schema_migrations (migration_id, description) VALUES
 ('001_initial_schema', 'Fresh database schema with all features enabled'),
-('002_dynamic_branches', 'Dynamic branch support with certificate_stock table');
+('002_dynamic_branches', 'Dynamic branch support with certificate_stock table'),
+('003_correct_age_ranges', 'Fixed division age ranges: JK(8-16), LK(4-8)');
 
 -- =====================================================
 -- 19. VERIFICATION & SUMMARY
@@ -762,9 +778,13 @@ BEGIN
     RAISE NOTICE '- Admin: gulam / admin123';
     RAISE NOTICE '- Teacher: azhar / admin123';
     RAISE NOTICE '';
-    RAISE NOTICE 'DIVISIONS:';
-    RAISE NOTICE '- JK (Junior Koder)';
-    RAISE NOTICE '- LK (Little Koder)';
+    RAISE NOTICE 'DIVISIONS WITH CORRECT AGE RANGES:';
+    RAISE NOTICE '- JK (Junior Koder): 8-16 tahun';
+    RAISE NOTICE '  * Level 1: 8-12 tahun';
+    RAISE NOTICE '  * Level 2: 12-16 tahun';
+    RAISE NOTICE '- LK (Little Koder): 4-8 tahun';
+    RAISE NOTICE '  * Level 1: 4-6 tahun';
+    RAISE NOTICE '  * Level 2: 6-8 tahun';
     RAISE NOTICE '';
     RAISE NOTICE 'BRANCHES:';
     RAISE NOTICE '- SND (Sunda)';
@@ -775,9 +795,9 @@ BEGIN
     RAISE NOTICE '- 1 Admin user';
     RAISE NOTICE '- 1 Teacher (Azhar at SND, division JK)';
     RAISE NOTICE '- 1 Certificate batch (100 certs, 100 medals at SND)';
-    RAISE NOTICE '- 2 Modules (JK-001, LK-001)';
-    RAISE NOTICE '- 1 Student (Budi Santoso at SND)';
-    RAISE NOTICE '- 1 Completed module (Budi completed JK-001)';
+    RAISE NOTICE '- 4 Modules (JK L1, JK L2, LK L1, LK L2)';
+    RAISE NOTICE '- 1 Student (Budi Santoso, age 8, JK division at SND)';
+    RAISE NOTICE '- 1 Completed module (Budi completed JK-001 Level 1)';
     RAISE NOTICE '- 1 Printed certificate';
     RAISE NOTICE '';
     RAISE NOTICE '========================================';
@@ -791,9 +811,23 @@ SELECT id, username, role, teacher_name, teacher_division, teacher_branch FROM u
 SELECT '=== BRANCHES ===' as info;
 SELECT id, branch_code, branch_name, is_active FROM branches ORDER BY branch_code;
 
--- Show modules
-SELECT '=== MODULES ===' as info;
-SELECT id, module_code, module_name, division, min_age, max_age FROM modules ORDER BY division, module_code;
+-- Show modules with age range verification
+SELECT '=== MODULES WITH AGE RANGES ===' as info;
+SELECT 
+    module_code,
+    module_name,
+    division,
+    min_age,
+    max_age,
+    CASE 
+        WHEN division = 'JK' AND min_age = 8 AND max_age = 12 THEN '✓ Correct (JK L1: 8-12)'
+        WHEN division = 'JK' AND min_age = 12 AND max_age = 16 THEN '✓ Correct (JK L2: 12-16)'
+        WHEN division = 'LK' AND min_age = 4 AND max_age = 6 THEN '✓ Correct (LK L1: 4-6)'
+        WHEN division = 'LK' AND min_age = 6 AND max_age = 8 THEN '✓ Correct (LK L2: 6-8)'
+        ELSE '✗ INCORRECT'
+    END as verification
+FROM modules
+ORDER BY division, module_code;
 
 -- Show stock summary
 SELECT '=== STOCK SUMMARY ===' as info;
@@ -806,12 +840,13 @@ SELECT
     s.student_name,
     b.branch_code,
     s.division,
+    EXTRACT(YEAR FROM AGE(s.date_of_birth))::INTEGER as age,
     s.status,
     COUNT(sm.id) as modules_completed
 FROM students s
 JOIN branches b ON s.branch_id = b.id
 LEFT JOIN student_modules sm ON s.id = sm.student_id
-GROUP BY s.id, s.student_name, b.branch_code, s.division, s.status;
+GROUP BY s.id, s.student_name, b.branch_code, s.division, s.date_of_birth, s.status;
 
 -- Show printed certificates
 SELECT '=== PRINTED CERTIFICATES ===' as info;
@@ -820,6 +855,7 @@ SELECT
     pc.certificate_id,
     pc.student_name,
     m.module_code,
+    m.module_name,
     pc.branch,
     pc.ptc_date,
     u.username as printed_by

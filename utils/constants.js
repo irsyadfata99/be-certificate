@@ -56,8 +56,29 @@ module.exports = {
     TIMEOUT: 5000, // milliseconds
   },
 
-  // Valid divisions
+  // Valid divisions with age ranges
   DIVISIONS: ["JK", "LK"],
+
+  DIVISION_AGE_RANGES: {
+    JK: {
+      name: "Junior Koder",
+      ranges: [
+        { min: 8, max: 12, label: "JK Level 1 (8-12 tahun)" },
+        { min: 12, max: 16, label: "JK Level 2 (12-16 tahun)" },
+      ],
+      overall_min: 8,
+      overall_max: 16,
+    },
+    LK: {
+      name: "Little Koder",
+      ranges: [
+        { min: 4, max: 6, label: "LK Level 1 (4-6 tahun)" },
+        { min: 6, max: 8, label: "LK Level 2 (6-8 tahun)" },
+      ],
+      overall_min: 4,
+      overall_max: 8,
+    },
+  },
 
   // Valid branches
   DEFAULT_BRANCHES: {
