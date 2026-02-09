@@ -1,17 +1,7 @@
 // routes/certificateRoutes.js
 const express = require("express");
 const router = express.Router();
-const {
-  createCertificate,
-  getAllCertificates,
-  getCertificateById,
-  updateCertificate,
-  deleteCertificate,
-  clearAllCertificates,
-  migrateCertificate,
-  getStockSummary,
-  getTransactionHistory,
-} = require("../controllers/CertificateController");
+const { createCertificate, getAllCertificates, getCertificateById, clearAllCertificates, migrateCertificate, getStockSummary, getTransactionHistory } = require("../controllers/CertificateController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
 // =====================================================
@@ -51,11 +41,5 @@ router.get("/", getAllCertificates);
 
 // Get specific certificate by ID
 router.get("/:id", getCertificateById);
-
-// Update certificate (DISABLED - will return 403 error)
-router.put("/:id", updateCertificate);
-
-// Delete certificate (DISABLED - will return 403 error)
-router.delete("/:id", deleteCertificate);
 
 module.exports = router;
