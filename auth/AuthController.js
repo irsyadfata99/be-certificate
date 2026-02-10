@@ -1,5 +1,5 @@
-// auth/AuthController.js - WITH REGIONAL HUB SUPPORT
-// Version 2.0 - JWT now includes regional_hub and is_head_branch
+// auth/AuthController.js - WITH REGIONAL HUB SUPPORT AND SOFT DELETE
+// Version 3.0 - Added is_active check for teacher login
 
 const pool = require("../config/database");
 const bcrypt = require("bcrypt");
@@ -49,7 +49,7 @@ const generateTokens = async (user) => {
         );
         tokenPayload.branches = branchesResult.rows;
 
-        // ===== NEW: GET REGIONAL HUB INFO =====
+        // ===== GET REGIONAL HUB INFO =====
         // Get the teacher's primary branch details
         const teacherBranchInfo = await client.query(
           `SELECT 
@@ -124,7 +124,7 @@ const generateTokens = async (user) => {
 };
 
 // =====================================================
-// LOGIN - WITH REGIONAL HUB INFO IN RESPONSE
+// LOGIN - WITH REGIONAL HUB INFO AND SOFT DELETE CHECK
 // =====================================================
 const login = async (req, res) => {
   try {
@@ -170,6 +170,21 @@ const login = async (req, res) => {
 
     const user = result.rows[0];
 
+    // ===== NEW: CHECK IF ACCOUNT IS ACTIVE (SOFT DELETE) =====
+    if (user.is_active === false) {
+      logger.warn(
+        `Login attempt by inactive user: ${cleanUsername} (resigned: ${user.resigned_at})`,
+      );
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.FORBIDDEN,
+        user.role === "teacher"
+          ? "This account has been deactivated. Please contact the administrator."
+          : "This account is inactive. Please contact support.",
+        CONSTANTS.ERROR_CODES.ACCOUNT_INACTIVE,
+      );
+    }
+
     // Verifikasi password
     const validPassword = await bcrypt.compare(password, user.password);
 
@@ -191,6 +206,7 @@ const login = async (req, res) => {
       id: user.id,
       username: user.username,
       role: user.role,
+      is_active: user.is_active,
     };
 
     // Include teacher-specific data with arrays if user is teacher
@@ -219,7 +235,7 @@ const login = async (req, res) => {
         );
         userData.branches = branchesResult.rows;
 
-        // ===== NEW: GET REGIONAL HUB INFO FOR RESPONSE =====
+        // ===== GET REGIONAL HUB INFO FOR RESPONSE =====
         const branchInfo = await pool.query(
           `SELECT 
             b.branch_code,
@@ -280,7 +296,7 @@ const login = async (req, res) => {
 };
 
 // =====================================================
-// REFRESH TOKEN - WITH REGIONAL HUB INFO
+// REFRESH TOKEN - WITH REGIONAL HUB INFO AND SOFT DELETE CHECK
 // =====================================================
 const refreshToken = async (req, res) => {
   try {
@@ -325,6 +341,19 @@ const refreshToken = async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    // ===== NEW: CHECK IF ACCOUNT IS STILL ACTIVE =====
+    if (user.is_active === false) {
+      logger.warn(
+        `Token refresh attempt by inactive user: ${user.username} (resigned: ${user.resigned_at})`,
+      );
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.FORBIDDEN,
+        "This account has been deactivated",
+        CONSTANTS.ERROR_CODES.ACCOUNT_INACTIVE,
+      );
+    }
 
     // Generate new tokens (now includes regional hub info for teachers)
     const { accessToken, refreshToken: newRefreshToken } =

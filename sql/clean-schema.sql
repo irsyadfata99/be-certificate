@@ -1,10 +1,10 @@
 -- =====================================================
--- CERTIFICATE MANAGEMENT DATABASE - CLEAN SCHEMA WITH REGIONAL HUB
+-- CERTIFICATE MANAGEMENT DATABASE - CLEAN SCHEMA WITH SOFT DELETE
 -- =====================================================
 -- PostgreSQL Database Schema
--- Version: 5.0 (With Regional Hub Support Built-in)
+-- Version: 6.0 (With Soft Delete Support for Teachers)
 -- Created: February 2026
--- Updated: February 2026 - Added Regional Hub Support
+-- Updated: February 2026 - Added Teacher Soft Delete Support
 -- =====================================================
 -- DIVISION AGE RANGES:
 -- JK (Junior Koder): 8-16 tahun
@@ -21,6 +21,13 @@
 -- - Stock can only be migrated within same regional hub
 -- - Students can only transfer within same regional hub
 -- =====================================================
+-- SOFT DELETE FEATURE (Teachers):
+-- - is_active: BOOLEAN (true = active, false = resigned)
+-- - resigned_at: TIMESTAMP (when teacher resigned)
+-- - Historical data preserved (certificates, logs)
+-- - Login prevented for resigned teachers
+-- - Can be restored by database admin
+-- =====================================================
 -- DROP AND RECREATE DATABASE
 -- =====================================================
 
@@ -29,7 +36,7 @@
 -- 2. Run: DROP DATABASE IF EXISTS certificate_db;
 -- 3. Run: CREATE DATABASE certificate_db;
 -- 4. Run: \c certificate_db
--- 5. Run: \i clean-schema-with-regional-hub.sql
+-- 5. Run: \i clean-schema-with-soft-delete.sql
 
 -- =====================================================
 -- CLEAN START - DROP ALL TABLES
@@ -124,7 +131,7 @@ INSERT INTO branches (branch_code, branch_name, is_head_branch, regional_hub, is
 ('KBP', 'Kota Baru Parahyangan', false, 'SND', true);
 
 -- =====================================================
--- 3. USERS TABLE (ADMIN & TEACHER)
+-- 3. USERS TABLE (ADMIN & TEACHER) - WITH SOFT DELETE
 -- =====================================================
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -141,6 +148,10 @@ CREATE TABLE users (
     teacher_division VARCHAR(10),
     teacher_branch VARCHAR(10),
     
+    -- NEW: Soft delete support for teachers
+    is_active BOOLEAN DEFAULT true,
+    resigned_at TIMESTAMP NULL,
+    
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -150,6 +161,9 @@ CREATE TABLE users (
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_teacher_branch ON users(teacher_branch);
+CREATE INDEX idx_users_is_active ON users(is_active);
+CREATE INDEX idx_users_role_active ON users(role, is_active);
+CREATE INDEX idx_users_resigned_at ON users(resigned_at);
 
 -- Constraint: Teachers must have teacher_name
 ALTER TABLE users ADD CONSTRAINT check_teacher_name 
@@ -158,14 +172,21 @@ ALTER TABLE users ADD CONSTRAINT check_teacher_name
         (role = 'teacher' AND teacher_name IS NOT NULL)
     );
 
--- Insert users (bcrypt hash for 'admin123')
--- Admin: gulam / admin123
-INSERT INTO users (username, password, role) VALUES
-('gulam', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'admin');
+-- Constraint: If resigned, must have resigned_at timestamp
+ALTER TABLE users ADD CONSTRAINT check_resigned_timestamp
+    CHECK (
+        (is_active = true AND resigned_at IS NULL) OR
+        (is_active = false AND resigned_at IS NOT NULL)
+    );
 
--- Teacher: azhar / admin123
-INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch) VALUES
-('azhar', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Azhar Rivaldi', 'JK', 'SND');
+-- Insert users (bcrypt hash for 'admin123')
+-- Admin: gulam / admin123 (always active)
+INSERT INTO users (username, password, role, is_active) VALUES
+('gulam', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'admin', true);
+
+-- Teacher: azhar / admin123 (ACTIVE - changed from resigned)
+INSERT INTO users (username, password, role, teacher_name, teacher_division, teacher_branch, is_active, resigned_at) VALUES
+('azhar', '$2b$10$bZDJxWAEZZYF4iZtg2vqRe94qggikyDvQQ/pqKoemSQUUDKtVSrGu', 'teacher', 'Azhar Rivaldi', 'JK', 'SND', true, NULL);
 
 -- =====================================================
 -- 4. TEACHER BRANCHES (Many-to-Many)
@@ -755,12 +776,14 @@ FROM certificate_logs
 ORDER BY created_at DESC
 LIMIT 100;
 
--- Teachers View (with assigned branches and divisions)
+-- Teachers View (with assigned branches, divisions, and status)
 CREATE OR REPLACE VIEW v_teachers AS
 SELECT 
     u.id,
     u.username,
     u.teacher_name,
+    u.is_active,
+    u.resigned_at,
     u.created_at,
     u.updated_at,
     ARRAY_AGG(DISTINCT b.branch_code ORDER BY b.branch_code) FILTER (WHERE b.branch_code IS NOT NULL) as branches,
@@ -770,20 +793,23 @@ LEFT JOIN teacher_branches tb ON u.id = tb.teacher_id
 LEFT JOIN branches b ON tb.branch_id = b.id
 LEFT JOIN teacher_divisions td ON u.id = td.teacher_id
 WHERE u.role = 'teacher'
-GROUP BY u.id, u.username, u.teacher_name, u.created_at, u.updated_at
-ORDER BY u.created_at DESC;
+GROUP BY u.id, u.username, u.teacher_name, u.is_active, u.resigned_at, u.created_at, u.updated_at
+ORDER BY u.is_active DESC, u.created_at DESC;
 
--- Teachers by Branch View (WITH REGIONAL HUB INFO)
+-- Teachers by Branch View (WITH REGIONAL HUB INFO AND ACTIVE STATUS)
 CREATE OR REPLACE VIEW v_teachers_by_branch AS
 SELECT 
   b.branch_code,
   b.branch_name,
   b.is_head_branch,
   b.regional_hub,
-  b.is_active,
-  COUNT(DISTINCT tb.teacher_id) as teacher_count
+  b.is_active as branch_active,
+  COUNT(DISTINCT tb.teacher_id) FILTER (WHERE u.is_active = true) as active_teacher_count,
+  COUNT(DISTINCT tb.teacher_id) FILTER (WHERE u.is_active = false) as resigned_teacher_count,
+  COUNT(DISTINCT tb.teacher_id) as total_teacher_count
 FROM branches b
 LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
+LEFT JOIN users u ON tb.teacher_id = u.id AND u.role = 'teacher'
 GROUP BY b.branch_code, b.branch_name, b.is_head_branch, b.regional_hub, b.is_active
 ORDER BY b.is_head_branch DESC, b.regional_hub, b.branch_code;
 
@@ -830,7 +856,7 @@ WHERE s.status = 'active'
 GROUP BY s.id, s.student_name, b.branch_code, b.branch_name, s.division
 ORDER BY s.student_name;
 
--- Regional Hub Summary View (NEW)
+-- Regional Hub Summary View
 CREATE OR REPLACE VIEW v_regional_hub_summary AS
 SELECT 
   b.regional_hub,
@@ -838,11 +864,13 @@ SELECT
   COUNT(DISTINCT b.id) as total_branches,
   COUNT(DISTINCT CASE WHEN b.is_active THEN b.id END) as active_branches,
   COUNT(DISTINCT s.id) FILTER (WHERE s.status = 'active') as total_students,
-  COUNT(DISTINCT tb.teacher_id) as total_teachers,
+  COUNT(DISTINCT tb.teacher_id) FILTER (WHERE u.is_active = true) as active_teachers,
+  COUNT(DISTINCT tb.teacher_id) FILTER (WHERE u.is_active = false) as resigned_teachers,
   COALESCE(SUM(cs.jumlah_sertifikat), 0) as total_stock
 FROM branches b
 LEFT JOIN students s ON b.id = s.branch_id
 LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
+LEFT JOIN users u ON tb.teacher_id = u.id AND u.role = 'teacher'
 LEFT JOIN certificate_stock cs ON b.branch_code = cs.branch_code
 GROUP BY b.regional_hub
 ORDER BY b.regional_hub;
@@ -854,7 +882,8 @@ INSERT INTO schema_migrations (migration_id, description) VALUES
 ('001_initial_schema', 'Fresh database schema with all features enabled'),
 ('002_dynamic_branches', 'Dynamic branch support with certificate_stock table'),
 ('003_correct_age_ranges', 'Fixed division age ranges: JK(8-16), LK(4-8)'),
-('004_add_regional_hub_support', 'Add multi-regional hub support: is_head_branch and regional_hub columns');
+('004_add_regional_hub_support', 'Add multi-regional hub support: is_head_branch and regional_hub columns'),
+('005_add_teacher_soft_delete', 'Add soft delete support for teachers: is_active and resigned_at columns');
 
 -- =====================================================
 -- 19. VERIFICATION & SUMMARY
@@ -870,7 +899,13 @@ BEGIN
     RAISE NOTICE '';
     RAISE NOTICE 'CREDENTIALS:';
     RAISE NOTICE '- Admin: gulam / admin123';
-    RAISE NOTICE '- Teacher: azhar / admin123';
+    RAISE NOTICE '- Teacher: azhar / admin123 (ACTIVE)';
+    RAISE NOTICE '';
+    RAISE NOTICE 'NEW FEATURES:';
+    RAISE NOTICE '✓ Teacher Soft Delete (is_active, resigned_at)';
+    RAISE NOTICE '✓ Resigned teachers preserved in database';
+    RAISE NOTICE '✓ Login blocked for resigned teachers';
+    RAISE NOTICE '✓ Historical data maintained';
     RAISE NOTICE '';
     RAISE NOTICE 'DIVISIONS WITH CORRECT AGE RANGES:';
     RAISE NOTICE '- JK (Junior Koder): 8-16 tahun';
@@ -886,8 +921,8 @@ BEGIN
     RAISE NOTICE '- KBP (Kota Baru Parahyangan) - under SND region';
     RAISE NOTICE '';
     RAISE NOTICE 'DUMMY DATA:';
-    RAISE NOTICE '- 1 Admin user';
-    RAISE NOTICE '- 1 Teacher (Azhar at SND, division JK)';
+    RAISE NOTICE '- 1 Admin user (always active)';
+    RAISE NOTICE '- 1 Teacher (Azhar at SND, division JK, ACTIVE)';
     RAISE NOTICE '- 1 Certificate batch (100 certs, 100 medals at SND)';
     RAISE NOTICE '- 4 Modules (JK L1, JK L2, LK L1, LK L2)';
     RAISE NOTICE '- 1 Student (Budi Santoso, age 8, JK division at SND)';
@@ -897,9 +932,22 @@ BEGIN
     RAISE NOTICE '========================================';
 END $$;
 
--- Show users
-SELECT '=== USERS ===' as info;
-SELECT id, username, role, teacher_name, teacher_division, teacher_branch FROM users ORDER BY role, username;
+-- Show users with status
+SELECT '=== USERS WITH STATUS ===' as info;
+SELECT 
+    id, 
+    username, 
+    role, 
+    teacher_name, 
+    teacher_division, 
+    teacher_branch,
+    CASE 
+        WHEN is_active THEN '✓ ACTIVE'
+        ELSE '✗ RESIGNED'
+    END as status,
+    resigned_at
+FROM users 
+ORDER BY role, is_active DESC, username;
 
 -- Show branches with regional hub info
 SELECT '=== BRANCHES WITH REGIONAL HUB ===' as info;
@@ -916,8 +964,22 @@ SELECT
 FROM branches
 ORDER BY is_head_branch DESC, regional_hub, branch_code;
 
--- Show regional hub summary
-SELECT '=== REGIONAL HUB SUMMARY ===' as info;
+-- Show teachers view with status
+SELECT '=== TEACHERS VIEW (WITH STATUS) ===' as info;
+SELECT 
+    username,
+    teacher_name,
+    CASE 
+        WHEN is_active THEN '✓ Active'
+        ELSE '✗ Resigned'
+    END as status,
+    resigned_at,
+    branches,
+    divisions
+FROM v_teachers;
+
+-- Show regional hub summary with teacher status
+SELECT '=== REGIONAL HUB SUMMARY (WITH TEACHER STATUS) ===' as info;
 SELECT * FROM v_regional_hub_summary;
 
 -- Show modules with age range verification
@@ -967,7 +1029,11 @@ SELECT
     m.module_name,
     pc.branch,
     pc.ptc_date,
-    u.username as printed_by
+    u.username as printed_by,
+    CASE 
+        WHEN u.is_active THEN '✓ Active Teacher'
+        ELSE '✗ Resigned Teacher'
+    END as teacher_status
 FROM printed_certificates pc
 JOIN modules m ON pc.module_id = m.id
 JOIN users u ON pc.printed_by = u.id;

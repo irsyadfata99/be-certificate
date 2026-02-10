@@ -92,6 +92,12 @@ module.exports = {
   // Valid roles
   ROLES: ["admin", "teacher"],
 
+  // NEW: Teacher status (for soft delete)
+  TEACHER_STATUS: {
+    ACTIVE: "active",
+    RESIGNED: "resigned",
+  },
+
   // Valid action types for logs
   LOG_ACTION_TYPES: {
     CREATE: "CREATE",
@@ -102,6 +108,7 @@ module.exports = {
     MODULE_CREATED: "MODULE_CREATED",
     MODULE_UPDATED: "MODULE_UPDATED",
     MODULE_DELETED: "MODULE_DELETED",
+    TEACHER_RESIGNED: "TEACHER_RESIGNED", // NEW: For soft delete
   },
 
   // Error codes
@@ -115,6 +122,7 @@ module.exports = {
     INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
     SERVER_ERROR: "SERVER_ERROR",
     DATABASE_ERROR: "DATABASE_ERROR",
+    ACCOUNT_INACTIVE: "ACCOUNT_INACTIVE", // NEW: For resigned teacher login
   },
 
   // HTTP Status codes (for reference)
