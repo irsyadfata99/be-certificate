@@ -1,5 +1,5 @@
 // controllers/ExportController.js - UPDATED for Phase 4
-// Added student export functions and regional hub filter for logs
+// Added student export functions and regional hub filter for logs (IMPROVED)
 
 const pool = require("../config/database");
 const ExcelJS = require("exceljs");
@@ -103,7 +103,7 @@ const exportCertificates = async (req, res) => {
 };
 
 // =====================================================
-// 2. EXPORT CERTIFICATE LOGS (WITH REGIONAL HUB FILTER)
+// 2. EXPORT CERTIFICATE LOGS (WITH REGIONAL HUB FILTER - IMPROVED)
 // =====================================================
 const exportCertificateLogs = async (req, res) => {
   try {
@@ -111,6 +111,7 @@ const exportCertificateLogs = async (req, res) => {
 
     logger.info("Exporting certificate logs to Excel", { regional_hub: regionalHub });
 
+    // IMPROVED: Use EXISTS subquery (consistent with CertificateLogsController)
     let query = `
       SELECT 
         cl.certificate_id as "Certificate ID",
@@ -123,22 +124,22 @@ const exportCertificateLogs = async (req, res) => {
         cl.performed_by as "Performed By",
         cl.created_at as "Created At"
       FROM certificate_logs cl
+      WHERE 1=1
     `;
 
     const params = [];
     let paramCount = 1;
 
-    // Filter by regional hub if specified
+    // IMPROVED: Filter by regional hub using EXISTS subquery (no JOIN, no duplicates)
     if (regionalHub && regionalHub.trim()) {
-      query += `
-        INNER JOIN certificate_stock cs ON cl.certificate_id = cs.certificate_id
-        INNER JOIN branches b ON cs.branch_code = b.branch_code
-        WHERE b.regional_hub = $${paramCount}
-        GROUP BY cl.id, cl.certificate_id, cl.action_type, cl.description, 
-                 cl.from_branch, cl.to_branch, cl.certificate_amount, 
-                 cl.medal_amount, cl.performed_by, cl.created_at
-      `;
+      query += ` AND EXISTS (
+        SELECT 1 FROM certificate_stock cs
+        JOIN branches b ON cs.branch_code = b.branch_code
+        WHERE cs.certificate_id = cl.certificate_id
+        AND b.regional_hub = $${paramCount}
+      )`;
       params.push(regionalHub.trim());
+      paramCount++;
     }
 
     query += " ORDER BY cl.created_at DESC";
@@ -710,8 +711,8 @@ module.exports = {
   exportTeachers,
   exportModules,
   exportPrintedCertificates,
-  exportStudents, // NEW
-  exportStudentsByBranch, // NEW
-  exportStudentTransferHistory, // NEW
+  exportStudents,
+  exportStudentsByBranch,
+  exportStudentTransferHistory,
   exportAllData,
 };

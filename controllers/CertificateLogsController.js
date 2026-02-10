@@ -1,4 +1,4 @@
-// Certificate Logs Controller - WITH REGIONAL HUB FILTER
+// Certificate Logs Controller - WITH REGIONAL HUB FILTER (IMPROVED)
 
 const pool = require("../config/database");
 const fs = require("fs").promises;
@@ -25,7 +25,6 @@ async function logAction(data) {
   } catch (error) {
     logger.error("CRITICAL: Failed to create log:", error);
 
-    // FIXED: Use async file write instead of sync
     try {
       const logDir = path.join(__dirname, "..", "logs");
       const logFile = path.join(logDir, "failed-logs.jsonl");
@@ -55,7 +54,6 @@ async function logAction(data) {
         },
       };
 
-      // FIXED: Async file append
       await fs.appendFile(logFile, JSON.stringify(failedLog) + "\n");
 
       logger.info(`Failed log saved to backup file: ${logFile}`);
@@ -63,13 +61,11 @@ async function logAction(data) {
     } catch (fileError) {
       logger.error("DOUBLE FAILURE: Could not save to backup file either:", fileError);
     }
-
-    // Don't throw error - logging shouldn't break the main operation
   }
 }
 
 // =====================================================
-// GET LOGS WITH REGIONAL HUB FILTER
+// GET LOGS WITH REGIONAL HUB FILTER (IMPROVED)
 // =====================================================
 const getLogs = async (req, res) => {
   try {
@@ -79,7 +75,7 @@ const getLogs = async (req, res) => {
       from_date: fromDate,
       to_date: toDate,
       search,
-      regional_hub: regionalHub, // NEW: Regional hub filter
+      regional_hub: regionalHub,
       limit = CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT,
       offset = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
     } = req.query;
@@ -90,23 +86,13 @@ const getLogs = async (req, res) => {
     const validatedLimit = Math.min(Math.max(parseInt(limit) || CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
     const validatedOffset = Math.max(parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
 
+    // IMPROVED: Use same pattern as CertificateController
     let query = `
       SELECT 
         cl.*
       FROM certificate_logs cl
+      WHERE 1=1
     `;
-
-    // NEW: Join with certificate_stock and branches for regional hub filtering
-    let needsJoin = false;
-    if (regionalHub && regionalHub.trim()) {
-      needsJoin = true;
-      query += `
-        INNER JOIN certificate_stock cs ON cl.certificate_id = cs.certificate_id
-        INNER JOIN branches b ON cs.branch_code = b.branch_code
-      `;
-    }
-
-    query += " WHERE 1=1";
 
     const params = [];
     let paramCount = 1;
@@ -145,16 +131,16 @@ const getLogs = async (req, res) => {
       paramCount++;
     }
 
-    // NEW: Filter by regional hub
+    // IMPROVED: Regional hub filter using EXISTS subquery (same pattern as CertificateController)
     if (regionalHub && regionalHub.trim()) {
-      query += ` AND b.regional_hub = $${paramCount}`;
+      query += ` AND EXISTS (
+    SELECT 1 FROM certificate_stock cs
+    JOIN branches b ON cs.branch_code = b.branch_code
+    WHERE cs.certificate_id = cl.certificate_id
+    AND b.regional_hub = $${paramCount}
+  )`;
       params.push(regionalHub.trim());
       paramCount++;
-    }
-
-    // Group by to avoid duplicates when joining
-    if (needsJoin) {
-      query += ` GROUP BY cl.id`;
     }
 
     // Order by most recent first
@@ -170,17 +156,7 @@ const getLogs = async (req, res) => {
     const result = await pool.query(query, params);
 
     // Get total count for pagination
-    let countQuery = `SELECT COUNT(DISTINCT cl.id) FROM certificate_logs cl`;
-
-    if (needsJoin) {
-      countQuery += `
-        INNER JOIN certificate_stock cs ON cl.certificate_id = cs.certificate_id
-        INNER JOIN branches b ON cs.branch_code = b.branch_code
-      `;
-    }
-
-    countQuery += " WHERE 1=1";
-
+    let countQuery = `SELECT COUNT(*) FROM certificate_logs cl WHERE 1=1`;
     const countParams = [];
     let countParamNum = 1;
 
@@ -215,13 +191,20 @@ const getLogs = async (req, res) => {
     }
 
     if (regionalHub && regionalHub.trim()) {
-      countQuery += ` AND b.regional_hub = $${countParamNum}`;
+      countQuery += ` AND EXISTS (
+        SELECT 1 FROM certificate_stock cs
+        JOIN branches b ON cs.branch_code = b.branch_code
+        WHERE cs.certificate_id = cl.certificate_id
+        AND b.regional_hub = $${countParamNum}
+      )`;
       countParams.push(regionalHub.trim());
       countParamNum++;
     }
 
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
+
+    logger.info(`Logs retrieved: ${result.rows.length}/${totalCount} records ${regionalHub ? `(filtered by ${regionalHub} regional hub)` : ""}`);
 
     return sendSuccess(res, "Logs retrieved successfully", result.rows, {
       pagination: {
@@ -231,6 +214,14 @@ const getLogs = async (req, res) => {
         hasMore: totalCount > validatedOffset + result.rows.length,
         currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
         totalPages: Math.ceil(totalCount / validatedLimit),
+      },
+      filters: {
+        certificate_id: certificateId || null,
+        action_type: actionType || null,
+        from_date: fromDate || null,
+        to_date: toDate || null,
+        search: search || null,
+        regional_hub: regionalHub || null,
       },
     });
   } catch (error) {
