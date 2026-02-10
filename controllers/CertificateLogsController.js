@@ -1,4 +1,4 @@
-// Certificate Logs Controller - FIXED VERSION
+// Certificate Logs Controller - WITH REGIONAL HUB FILTER
 
 const pool = require("../config/database");
 const fs = require("fs").promises;
@@ -11,18 +11,7 @@ const { sendError, sendSuccess } = require("../utils/responseHelper");
 // IMPROVED LOG ACTION WITH ASYNC FILE BACKUP
 // =====================================================
 async function logAction(data) {
-  const {
-    certificateId,
-    actionType,
-    description,
-    fromBranch = null,
-    toBranch = null,
-    certificateAmount = 0,
-    medalAmount = 0,
-    oldValues = null,
-    newValues = null,
-    performedBy = "System",
-  } = data;
+  const { certificateId, actionType, description, fromBranch = null, toBranch = null, certificateAmount = 0, medalAmount = 0, oldValues = null, newValues = null, performedBy = "System" } = data;
 
   try {
     await pool.query(
@@ -30,18 +19,7 @@ async function logAction(data) {
        (certificate_id, action_type, description, from_branch, to_branch, 
         certificate_amount, medal_amount, old_values, new_values, performed_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [
-        certificateId,
-        actionType,
-        description,
-        fromBranch,
-        toBranch,
-        certificateAmount,
-        medalAmount,
-        oldValues ? JSON.stringify(oldValues) : null,
-        newValues ? JSON.stringify(newValues) : null,
-        performedBy,
-      ],
+      [certificateId, actionType, description, fromBranch, toBranch, certificateAmount, medalAmount, oldValues ? JSON.stringify(oldValues) : null, newValues ? JSON.stringify(newValues) : null, performedBy],
     );
     logger.info(`Log created: ${actionType} - ${certificateId}`);
   } catch (error) {
@@ -81,14 +59,9 @@ async function logAction(data) {
       await fs.appendFile(logFile, JSON.stringify(failedLog) + "\n");
 
       logger.info(`Failed log saved to backup file: ${logFile}`);
-      logger.warn(
-        "WARNING: Audit log failed to write to database! Check failed-logs.jsonl",
-      );
+      logger.warn("WARNING: Audit log failed to write to database! Check failed-logs.jsonl");
     } catch (fileError) {
-      logger.error(
-        "DOUBLE FAILURE: Could not save to backup file either:",
-        fileError,
-      );
+      logger.error("DOUBLE FAILURE: Could not save to backup file either:", fileError);
     }
 
     // Don't throw error - logging shouldn't break the main operation
@@ -96,7 +69,7 @@ async function logAction(data) {
 }
 
 // =====================================================
-// GET LOGS WITH IMPROVED DATE FILTER
+// GET LOGS WITH REGIONAL HUB FILTER
 // =====================================================
 const getLogs = async (req, res) => {
   try {
@@ -106,6 +79,7 @@ const getLogs = async (req, res) => {
       from_date: fromDate,
       to_date: toDate,
       search,
+      regional_hub: regionalHub, // NEW: Regional hub filter
       limit = CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT,
       offset = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
     } = req.query;
@@ -113,55 +87,78 @@ const getLogs = async (req, res) => {
     logger.info("Fetching logs with filters:", req.query);
 
     // Validate limit and offset
-    const validatedLimit = Math.min(
-      Math.max(parseInt(limit) || CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, 1),
-      CONSTANTS.PAGINATION.MAX_LIMIT,
-    );
-    const validatedOffset = Math.max(
-      parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
-      0,
-    );
+    const validatedLimit = Math.min(Math.max(parseInt(limit) || CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
+    const validatedOffset = Math.max(parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
 
-    let query = "SELECT * FROM certificate_logs WHERE 1=1";
+    let query = `
+      SELECT 
+        cl.*
+      FROM certificate_logs cl
+    `;
+
+    // NEW: Join with certificate_stock and branches for regional hub filtering
+    let needsJoin = false;
+    if (regionalHub && regionalHub.trim()) {
+      needsJoin = true;
+      query += `
+        INNER JOIN certificate_stock cs ON cl.certificate_id = cs.certificate_id
+        INNER JOIN branches b ON cs.branch_code = b.branch_code
+      `;
+    }
+
+    query += " WHERE 1=1";
+
     const params = [];
     let paramCount = 1;
 
     // Filter by certificate_id
     if (certificateId && certificateId.trim()) {
-      query += ` AND certificate_id = $${paramCount}`;
+      query += ` AND cl.certificate_id = $${paramCount}`;
       params.push(certificateId.trim());
       paramCount++;
     }
 
     // Filter by action_type
     if (actionType && actionType.trim()) {
-      query += ` AND action_type = $${paramCount}`;
+      query += ` AND cl.action_type = $${paramCount}`;
       params.push(actionType.trim().toUpperCase());
       paramCount++;
     }
 
     // Filter by date range
     if (fromDate && fromDate.trim()) {
-      query += ` AND created_at >= $${paramCount}`;
+      query += ` AND cl.created_at >= $${paramCount}`;
       params.push(fromDate.trim());
       paramCount++;
     }
 
     if (toDate && toDate.trim()) {
-      query += ` AND created_at < $${paramCount}::date + interval '1 day'`;
+      query += ` AND cl.created_at < $${paramCount}::date + interval '1 day'`;
       params.push(toDate.trim());
       paramCount++;
     }
 
     // Search in certificate_id or description
     if (search && search.trim()) {
-      query += ` AND (certificate_id ILIKE $${paramCount} OR description ILIKE $${paramCount})`;
+      query += ` AND (cl.certificate_id ILIKE $${paramCount} OR cl.description ILIKE $${paramCount})`;
       params.push(`%${search.trim()}%`);
       paramCount++;
     }
 
+    // NEW: Filter by regional hub
+    if (regionalHub && regionalHub.trim()) {
+      query += ` AND b.regional_hub = $${paramCount}`;
+      params.push(regionalHub.trim());
+      paramCount++;
+    }
+
+    // Group by to avoid duplicates when joining
+    if (needsJoin) {
+      query += ` GROUP BY cl.id`;
+    }
+
     // Order by most recent first
-    query += ` ORDER BY created_at DESC`;
+    query += ` ORDER BY cl.created_at DESC`;
 
     // Add pagination
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
@@ -173,46 +170,60 @@ const getLogs = async (req, res) => {
     const result = await pool.query(query, params);
 
     // Get total count for pagination
-    let countQuery = "SELECT COUNT(*) FROM certificate_logs WHERE 1=1";
+    let countQuery = `SELECT COUNT(DISTINCT cl.id) FROM certificate_logs cl`;
+
+    if (needsJoin) {
+      countQuery += `
+        INNER JOIN certificate_stock cs ON cl.certificate_id = cs.certificate_id
+        INNER JOIN branches b ON cs.branch_code = b.branch_code
+      `;
+    }
+
+    countQuery += " WHERE 1=1";
+
     const countParams = [];
     let countParamNum = 1;
 
     if (certificateId && certificateId.trim()) {
-      countQuery += ` AND certificate_id = $${countParamNum}`;
+      countQuery += ` AND cl.certificate_id = $${countParamNum}`;
       countParams.push(certificateId.trim());
       countParamNum++;
     }
 
     if (actionType && actionType.trim()) {
-      countQuery += ` AND action_type = $${countParamNum}`;
+      countQuery += ` AND cl.action_type = $${countParamNum}`;
       countParams.push(actionType.trim().toUpperCase());
       countParamNum++;
     }
 
     if (fromDate && fromDate.trim()) {
-      countQuery += ` AND created_at >= $${countParamNum}`;
+      countQuery += ` AND cl.created_at >= $${countParamNum}`;
       countParams.push(fromDate.trim());
       countParamNum++;
     }
 
     if (toDate && toDate.trim()) {
-      countQuery += ` AND created_at < $${countParamNum}::date + interval '1 day'`;
+      countQuery += ` AND cl.created_at < $${countParamNum}::date + interval '1 day'`;
       countParams.push(toDate.trim());
       countParamNum++;
     }
 
     if (search && search.trim()) {
-      countQuery += ` AND (certificate_id ILIKE $${countParamNum} OR description ILIKE $${countParamNum})`;
+      countQuery += ` AND (cl.certificate_id ILIKE $${countParamNum} OR cl.description ILIKE $${countParamNum})`;
       countParams.push(`%${search.trim()}%`);
+      countParamNum++;
+    }
+
+    if (regionalHub && regionalHub.trim()) {
+      countQuery += ` AND b.regional_hub = $${countParamNum}`;
+      countParams.push(regionalHub.trim());
       countParamNum++;
     }
 
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
 
-    res.json({
-      success: true,
-      data: result.rows,
+    return sendSuccess(res, "Logs retrieved successfully", result.rows, {
       pagination: {
         total: totalCount,
         limit: validatedLimit,
@@ -224,12 +235,7 @@ const getLogs = async (req, res) => {
     });
   } catch (error) {
     logger.error("Get logs error:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Server error",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve logs", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -239,31 +245,17 @@ const getLogsByCertificate = async (req, res) => {
     const { id } = req.params;
 
     if (!id || !id.trim()) {
-      return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        message: "Certificate ID is required",
-        errorCode: CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      });
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Certificate ID is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const result = await pool.query(
-      "SELECT * FROM certificate_logs WHERE certificate_id = $1 ORDER BY created_at DESC",
-      [id.trim()],
-    );
+    const result = await pool.query("SELECT * FROM certificate_logs WHERE certificate_id = $1 ORDER BY created_at DESC", [id.trim()]);
 
-    res.json({
-      success: true,
-      data: result.rows,
+    return sendSuccess(res, "Certificate logs retrieved successfully", result.rows, {
       count: result.rows.length,
     });
   } catch (error) {
     logger.error("Get certificate logs error:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Server error",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve certificate logs", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -282,23 +274,14 @@ const deleteOldLogs = async (req, res) => {
       [validatedDays],
     );
 
-    logger.info(
-      `Deleted ${result.rows.length} log entries older than ${validatedDays} days`,
-    );
+    logger.info(`Deleted ${result.rows.length} log entries older than ${validatedDays} days`);
 
-    res.json({
-      success: true,
-      message: `Deleted ${result.rows.length} log entries older than ${validatedDays} days`,
+    return sendSuccess(res, `Deleted ${result.rows.length} log entries older than ${validatedDays} days`, {
       deletedCount: result.rows.length,
     });
   } catch (error) {
     logger.error("Delete old logs error:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Server error",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to delete old logs", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -313,9 +296,7 @@ const recoverFailedLogs = async (req, res) => {
     try {
       await fs.access(logFile);
     } catch {
-      return res.json({
-        success: true,
-        message: "No failed logs to recover",
+      return sendSuccess(res, "No failed logs to recover", {
         recovered: 0,
       });
     }
@@ -360,34 +341,20 @@ const recoverFailedLogs = async (req, res) => {
     // Rename the file to mark it as processed
     if (recovered > 0) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const backupFile = path.join(
-        __dirname,
-        "..",
-        "logs",
-        `recovered-${timestamp}.jsonl`,
-      );
+      const backupFile = path.join(__dirname, "..", "logs", `recovered-${timestamp}.jsonl`);
       await fs.rename(logFile, backupFile);
       logger.info(`Recovered logs backed up to: ${backupFile}`);
     }
 
-    logger.info(
-      `Recovery complete. Recovered: ${recovered}, Failed: ${failed}`,
-    );
+    logger.info(`Recovery complete. Recovered: ${recovered}, Failed: ${failed}`);
 
-    res.json({
-      success: true,
-      message: `Recovery complete. Recovered: ${recovered}, Failed: ${failed}`,
+    return sendSuccess(res, `Recovery complete. Recovered: ${recovered}, Failed: ${failed}`, {
       recovered,
       failed,
     });
   } catch (error) {
     logger.error("Recover failed logs error:", error);
-    res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-      success: false,
-      message: "Server error",
-      errorCode: CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to recover failed logs", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 

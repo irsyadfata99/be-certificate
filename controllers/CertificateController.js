@@ -1,5 +1,5 @@
-// controllers/CertificateController.js - WITH REGIONAL HUB SUPPORT
-// Version 2.1 - Added branch_code parameter for admin to select head branch
+// controllers/CertificateController.js - WITH REGIONAL HUB FILTERING
+// Version 2.2 - Added regional_hub query parameter for filtering
 
 const pool = require("../config/database");
 const { logAction } = require("./CertificateLogsController");
@@ -9,19 +9,16 @@ const validators = require("../utils/validators");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
 
 // =====================================================
-// 1. CREATE NEW CERTIFICATE - HEAD BRANCH ONLY (UPDATED)
+// 1. CREATE NEW CERTIFICATE - HEAD BRANCH ONLY
 // =====================================================
 const createCertificate = async (req, res) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
-    await client.query(
-      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
-    );
+    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
 
-    const { certificate_id, jumlah_sertifikat, jumlah_medali, branch_code } =
-      req.body;
+    const { certificate_id, jumlah_sertifikat, jumlah_medali, branch_code } = req.body;
 
     // MODIFIED: Allow admin to specify branch_code from frontend
     // Priority: 1) branch_code from request, 2) user's teacher_branch, 3) fallback SND
@@ -52,12 +49,7 @@ const createCertificate = async (req, res) => {
 
     if (branchCheck.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        `Branch ${userBranch} not found`,
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, `Branch ${userBranch} not found`, CONSTANTS.ERROR_CODES.NOT_FOUND);
     }
 
     const branchInfo = branchCheck.rows[0];
@@ -76,23 +68,13 @@ const createCertificate = async (req, res) => {
     // Check if branch is active
     if (!branchInfo.is_active) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Cannot input stock to inactive branch",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Cannot input stock to inactive branch", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // ===== VALIDATION =====
     if (!certificate_id || !certificate_id.trim()) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Certificate ID is required",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Certificate ID is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     const cleanId = validators.sanitizeString(certificate_id.trim());
@@ -101,12 +83,7 @@ const createCertificate = async (req, res) => {
     const idValidation = validators.validateCertificateId(cleanId);
     if (!idValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        idValidation.error,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, idValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // Validate amounts
@@ -115,38 +92,20 @@ const createCertificate = async (req, res) => {
 
     if (certAmount < 0 || medalAmount < 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Certificate and medal amounts cannot be negative",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Certificate and medal amounts cannot be negative", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     if (certAmount === 0 && medalAmount === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "At least one certificate or medal must be greater than 0",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "At least one certificate or medal must be greater than 0", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // Check if certificate ID already exists
-    const existingCert = await client.query(
-      "SELECT certificate_id FROM certificates WHERE certificate_id = $1",
-      [cleanId],
-    );
+    const existingCert = await client.query("SELECT certificate_id FROM certificates WHERE certificate_id = $1", [cleanId]);
 
     if (existingCert.rows.length > 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.CONFLICT,
-        "Certificate batch ID already exists",
-        CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.CONFLICT, "Certificate batch ID already exists", CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY);
     }
 
     // 1. Insert into certificates table
@@ -195,53 +154,35 @@ const createCertificate = async (req, res) => {
 
     await client.query("COMMIT");
 
-    logger.info(
-      `Certificate batch created successfully: ${cleanId} at ${destinationBranch} (${branchInfo.branch_name})`,
-    );
+    logger.info(`Certificate batch created successfully: ${cleanId} at ${destinationBranch} (${branchInfo.branch_name})`);
 
-    return sendSuccess(
-      res,
-      `Certificate batch created successfully at ${branchInfo.branch_name}`,
-      {
-        certificate: certResult.rows[0],
-        stock: {
-          branch_code: destinationBranch,
-          branch_name: branchInfo.branch_name,
-          certificates: certAmount,
-          medals: medalAmount,
-        },
-        message: `Stock has been added to ${branchInfo.branch_name}. You can now migrate to other branches in your ${regionalHub} region.`,
+    return sendSuccess(res, `Certificate batch created successfully at ${branchInfo.branch_name}`, {
+      certificate: certResult.rows[0],
+      stock: {
+        branch_code: destinationBranch,
+        branch_name: branchInfo.branch_name,
+        certificates: certAmount,
+        medals: medalAmount,
       },
-    );
+      message: `Stock has been added to ${branchInfo.branch_name}. You can now migrate to other branches in your ${regionalHub} region.`,
+    });
   } catch (error) {
     await client.query("ROLLBACK");
 
     // Handle specific PostgreSQL errors
     if (error.code === "23505") {
       // Unique violation
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.CONFLICT,
-        "Certificate batch ID already exists",
-        CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY,
-        error,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.CONFLICT, "Certificate batch ID already exists", CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY, error);
     }
 
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to create certificate",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to create certificate", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   } finally {
     client.release();
   }
 };
 
 // =====================================================
-// 2. GET ALL CERTIFICATES (SERVER-SIDE PAGINATION)
+// 2. GET ALL CERTIFICATES (WITH REGIONAL HUB FILTER)
 // =====================================================
 const getAllCertificates = async (req, res) => {
   try {
@@ -250,29 +191,58 @@ const getAllCertificates = async (req, res) => {
       limit: limitParam = CONSTANTS.PAGINATION.DEFAULT_LIMIT,
       offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
       search = "",
+      regional_hub = "", // NEW: Filter by regional hub
     } = req.query;
 
-    logger.info("Get all certificates request:", req.query);
+    logger.info("Get all certificates request:", {
+      ...req.query,
+      regional_hub,
+    });
 
     // Validate and sanitize pagination parameters
-    const limit = Math.min(
-      Math.max(parseInt(limitParam) || CONSTANTS.PAGINATION.DEFAULT_LIMIT, 1),
-      CONSTANTS.PAGINATION.MAX_LIMIT,
-    );
-    const offset = Math.max(
-      parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
-      0,
-    );
+    const limit = Math.min(Math.max(parseInt(limitParam) || CONSTANTS.PAGINATION.DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
+    const offset = Math.max(parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
 
-    // Build query with search filter
+    // Build query with search and regional hub filter
     let whereClause = "";
     const queryParams = [limit, offset];
     let paramCount = 3;
 
+    // Search filter
     if (search && search.trim()) {
       whereClause = `WHERE c.certificate_id ILIKE $${paramCount}`;
       queryParams.push(`%${search.trim()}%`);
       paramCount++;
+    }
+
+    // NEW: Regional hub filter - CRITICAL FIX
+    // We need to filter at the certificate level, not just stock level
+    // Only show certificates that have AT LEAST ONE stock entry in the selected regional hub
+    let regionalHubJoin = "";
+    if (regional_hub && regional_hub.trim()) {
+      const hubParamIndex = paramCount;
+      queryParams.push(regional_hub.trim());
+      paramCount++;
+
+      // Add WHERE clause to filter certificates
+      if (whereClause) {
+        whereClause += ` AND EXISTS (
+          SELECT 1 FROM certificate_stock cs2
+          JOIN branches b2 ON cs2.branch_code = b2.branch_code
+          WHERE cs2.certificate_id = c.certificate_id
+          AND b2.regional_hub = $${hubParamIndex}
+        )`;
+      } else {
+        whereClause = `WHERE EXISTS (
+          SELECT 1 FROM certificate_stock cs2
+          JOIN branches b2 ON cs2.branch_code = b2.branch_code
+          WHERE cs2.certificate_id = c.certificate_id
+          AND b2.regional_hub = $${hubParamIndex}
+        )`;
+      }
+
+      // Also filter the aggregated stock to only show selected regional hub
+      regionalHubJoin = `AND b.regional_hub = $${hubParamIndex}`;
     }
 
     const query = `
@@ -282,7 +252,7 @@ const getAllCertificates = async (req, res) => {
         c.created_at,
         c.updated_at,
         
-        -- Stock by branch (dynamic JSON aggregation)
+        -- Stock by branch (filtered by regional hub if specified)
         COALESCE(
           json_agg(
             json_build_object(
@@ -290,14 +260,20 @@ const getAllCertificates = async (req, res) => {
               'branch_name', b.branch_name,
               'certificates', cs.jumlah_sertifikat,
               'medals', cs.jumlah_medali
-            ) ORDER BY cs.branch_code
-          ) FILTER (WHERE cs.branch_code IS NOT NULL),
+            ) ORDER BY b.is_head_branch DESC, cs.branch_code
+          ) FILTER (WHERE cs.branch_code IS NOT NULL ${regionalHubJoin}),
           '[]'::json
         ) as stock_by_branch,
         
-        -- Total per batch
-        COALESCE(SUM(cs.jumlah_sertifikat), 0) as batch_total_cert,
-        COALESCE(SUM(cs.jumlah_medali), 0) as batch_total_medal
+        -- Total per batch (filtered by regional hub if specified)
+        COALESCE(
+          SUM(cs.jumlah_sertifikat) FILTER (WHERE cs.branch_code IS NOT NULL ${regionalHubJoin}), 
+          0
+        ) as batch_total_cert,
+        COALESCE(
+          SUM(cs.jumlah_medali) FILTER (WHERE cs.branch_code IS NOT NULL ${regionalHubJoin}), 
+          0
+        ) as batch_total_medal
         
       FROM certificates c
       LEFT JOIN certificate_stock cs ON c.certificate_id = cs.certificate_id
@@ -325,33 +301,24 @@ const getAllCertificates = async (req, res) => {
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
 
-    logger.info(
-      `Certificates retrieved: ${result.rows.length}/${totalCount} records`,
-    );
+    logger.info(`Certificates retrieved: ${result.rows.length}/${totalCount} records ${regional_hub ? `(filtered by ${regional_hub} regional hub)` : ""}`);
 
-    return sendSuccess(
-      res,
-      "Certificates retrieved successfully",
-      result.rows,
-      {
-        pagination: {
-          total: totalCount,
-          limit: limit,
-          offset: offset,
-          hasMore: totalCount > offset + result.rows.length,
-          currentPage: Math.floor(offset / limit) + 1,
-          totalPages: Math.ceil(totalCount / limit),
-        },
+    return sendSuccess(res, "Certificates retrieved successfully", result.rows, {
+      pagination: {
+        total: totalCount,
+        limit: limit,
+        offset: offset,
+        hasMore: totalCount > offset + result.rows.length,
+        currentPage: Math.floor(offset / limit) + 1,
+        totalPages: Math.ceil(totalCount / limit),
       },
-    );
+      filters: {
+        search: search || null,
+        regional_hub: regional_hub || null,
+      },
+    });
   } catch (error) {
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to fetch certificates",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to fetch certificates", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -364,12 +331,7 @@ const getCertificateById = async (req, res) => {
 
     const idValidation = validators.validateCertificateId(id);
     if (!idValidation.valid) {
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        idValidation.error,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, idValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     const cleanId = idValidation.value;
@@ -409,27 +371,12 @@ const getCertificateById = async (req, res) => {
     const result = await pool.query(query, [cleanId]);
 
     if (result.rows.length === 0) {
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "Certificate not found",
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Certificate not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
     }
 
-    return sendSuccess(
-      res,
-      "Certificate retrieved successfully",
-      result.rows[0],
-    );
+    return sendSuccess(res, "Certificate retrieved successfully", result.rows[0]);
   } catch (error) {
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to retrieve certificate",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve certificate", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -441,9 +388,7 @@ const clearAllCertificates = async (req, res) => {
 
   try {
     await client.query("BEGIN");
-    await client.query(
-      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
-    );
+    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
 
     logger.info("Clear all certificates requested");
 
@@ -462,12 +407,7 @@ const clearAllCertificates = async (req, res) => {
 
     if (allCertificates.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "No certificates to delete",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "No certificates to delete", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     logger.info(`Found ${allCertificates.length} certificates to delete`);
@@ -481,9 +421,7 @@ const clearAllCertificates = async (req, res) => {
     });
 
     // Delete all certificates (cascade will delete stock)
-    const deleteResult = await client.query(
-      "DELETE FROM certificates RETURNING *",
-    );
+    const deleteResult = await client.query("DELETE FROM certificates RETURNING *");
 
     logger.info(`Deleted ${deleteResult.rows.length} certificates`);
 
@@ -511,24 +449,14 @@ const clearAllCertificates = async (req, res) => {
 
     await client.query("COMMIT");
 
-    return sendSuccess(
-      res,
-      `Successfully deleted all ${allCertificates.length} certificate batches`,
-      {
-        deleted_count: allCertificates.length,
-        total_certificates_deleted: totalCert,
-        total_medals_deleted: totalMedal,
-      },
-    );
+    return sendSuccess(res, `Successfully deleted all ${allCertificates.length} certificate batches`, {
+      deleted_count: allCertificates.length,
+      total_certificates_deleted: totalCert,
+      total_medals_deleted: totalMedal,
+    });
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to clear certificates",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to clear certificates", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   } finally {
     client.release();
   }
@@ -542,16 +470,9 @@ const migrateCertificate = async (req, res) => {
 
   try {
     await client.query("BEGIN");
-    await client.query(
-      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
-    );
+    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
 
-    const {
-      certificate_id,
-      destination_branch,
-      certificate_amount,
-      medal_amount,
-    } = req.body;
+    const { certificate_id, destination_branch, certificate_amount, medal_amount } = req.body;
 
     // Get user's branch from JWT token
     const sourceBranch = req.user.teacher_branch || "SND"; // Fallback to SND for admin
@@ -580,12 +501,7 @@ const migrateCertificate = async (req, res) => {
 
     if (sourceInfo.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "Your branch information not found",
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Your branch information not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
     }
 
     const source = sourceInfo.rows[0];
@@ -604,28 +520,16 @@ const migrateCertificate = async (req, res) => {
     // ===== VALIDATION =====
     if (!certificate_id || !certificate_id.trim()) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Certificate ID is required",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Certificate ID is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     if (!destination_branch || !destination_branch.trim()) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Destination branch is required",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Destination branch is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     const cleanId = validators.sanitizeString(certificate_id.trim());
-    const cleanDestination = validators.sanitizeString(
-      destination_branch.trim().toUpperCase(),
-    );
+    const cleanDestination = validators.sanitizeString(destination_branch.trim().toUpperCase());
 
     // Validate amounts
     const certAmount = parseInt(certificate_amount) || 0;
@@ -633,38 +537,20 @@ const migrateCertificate = async (req, res) => {
 
     if (certAmount < 0 || medalAmount < 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Certificate and medal amounts cannot be negative",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Certificate and medal amounts cannot be negative", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     if (certAmount === 0 && medalAmount === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "At least one certificate or medal amount must be greater than 0",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "At least one certificate or medal amount must be greater than 0", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // Check if certificate exists
-    const certCheck = await client.query(
-      "SELECT certificate_id FROM certificates WHERE certificate_id = $1",
-      [cleanId],
-    );
+    const certCheck = await client.query("SELECT certificate_id FROM certificates WHERE certificate_id = $1", [cleanId]);
 
     if (certCheck.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "Certificate batch not found",
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Certificate batch not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
     }
 
     // ===== GET DESTINATION BRANCH INFO =====
@@ -682,12 +568,7 @@ const migrateCertificate = async (req, res) => {
 
     if (destInfo.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "Destination branch not found",
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Destination branch not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
     }
 
     const destination = destInfo.rows[0];
@@ -695,12 +576,7 @@ const migrateCertificate = async (req, res) => {
     // Check if destination is active
     if (!destination.is_active) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Cannot migrate to inactive branch (${cleanDestination})`,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Cannot migrate to inactive branch (${cleanDestination})`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // ===== CRITICAL: SAME REGIONAL HUB VALIDATION =====
@@ -720,12 +596,7 @@ const migrateCertificate = async (req, res) => {
     // Prevent migration to self
     if (sourceBranch === cleanDestination) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Cannot migrate to the same branch",
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Cannot migrate to the same branch", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // ===== CHECK STOCK AVAILABILITY =====
@@ -738,12 +609,7 @@ const migrateCertificate = async (req, res) => {
 
     if (stockCheck.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        `No stock found for certificate ${cleanId} in your branch (${sourceBranch})`,
-        CONSTANTS.ERROR_CODES.NOT_FOUND,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, `No stock found for certificate ${cleanId} in your branch (${sourceBranch})`, CONSTANTS.ERROR_CODES.NOT_FOUND);
     }
 
     const availableCert = parseInt(stockCheck.rows[0].jumlah_sertifikat) || 0;
@@ -752,22 +618,12 @@ const migrateCertificate = async (req, res) => {
     // Validate sufficient stock
     if (certAmount > availableCert) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Insufficient certificates. Available: ${availableCert}, Requested: ${certAmount}`,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Insufficient certificates. Available: ${availableCert}, Requested: ${certAmount}`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     if (medalAmount > availableMedal) {
       await client.query("ROLLBACK");
-      return sendError(
-        res,
-        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Insufficient medals. Available: ${availableMedal}, Requested: ${medalAmount}`,
-        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-      );
+      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, `Insufficient medals. Available: ${availableMedal}, Requested: ${medalAmount}`, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
     // ===== PERFORM MIGRATION =====
@@ -827,9 +683,7 @@ const migrateCertificate = async (req, res) => {
 
     await client.query("COMMIT");
 
-    logger.info(
-      `Stock migrated successfully: ${cleanId} from ${sourceBranch} to ${cleanDestination} (same region: ${source.regional_hub})`,
-    );
+    logger.info(`Stock migrated successfully: ${cleanId} from ${sourceBranch} to ${cleanDestination} (same region: ${source.regional_hub})`);
 
     return sendSuccess(res, "Stock migrated successfully", {
       certificate_id: cleanId,
@@ -849,13 +703,7 @@ const migrateCertificate = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to migrate stock",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to migrate stock", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   } finally {
     client.release();
   }
@@ -916,13 +764,7 @@ const getStockSummary = async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to retrieve stock summary",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve stock summary", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 
@@ -931,26 +773,12 @@ const getStockSummary = async (req, res) => {
 // =====================================================
 const getTransactionHistory = async (req, res) => {
   try {
-    const {
-      limit: limitParam = CONSTANTS.PAGINATION.HISTORY_DEFAULT_LIMIT,
-      offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
-      from_date: fromDate,
-      to_date: toDate,
-    } = req.query;
+    const { limit: limitParam = CONSTANTS.PAGINATION.HISTORY_DEFAULT_LIMIT, offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET, from_date: fromDate, to_date: toDate } = req.query;
 
     logger.info("Fetching transaction history:", req.query);
 
-    const validatedLimit = Math.min(
-      Math.max(
-        parseInt(limitParam) || CONSTANTS.PAGINATION.HISTORY_DEFAULT_LIMIT,
-        1,
-      ),
-      CONSTANTS.PAGINATION.MAX_LIMIT,
-    );
-    const validatedOffset = Math.max(
-      parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
-      0,
-    );
+    const validatedLimit = Math.min(Math.max(parseInt(limitParam) || CONSTANTS.PAGINATION.HISTORY_DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
+    const validatedOffset = Math.max(parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
 
     let query = `
       SELECT 
@@ -1019,33 +847,20 @@ const getTransactionHistory = async (req, res) => {
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
 
-    logger.info(
-      `Transaction history retrieved: ${result.rows.length}/${totalCount} records`,
-    );
+    logger.info(`Transaction history retrieved: ${result.rows.length}/${totalCount} records`);
 
-    return sendSuccess(
-      res,
-      "Transaction history retrieved successfully",
-      result.rows,
-      {
-        pagination: {
-          total: totalCount,
-          limit: validatedLimit,
-          offset: validatedOffset,
-          hasMore: totalCount > validatedOffset + result.rows.length,
-          currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
-          totalPages: Math.ceil(totalCount / validatedLimit),
-        },
+    return sendSuccess(res, "Transaction history retrieved successfully", result.rows, {
+      pagination: {
+        total: totalCount,
+        limit: validatedLimit,
+        offset: validatedOffset,
+        hasMore: totalCount > validatedOffset + result.rows.length,
+        currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
+        totalPages: Math.ceil(totalCount / validatedLimit),
       },
-    );
+    });
   } catch (error) {
-    return sendError(
-      res,
-      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Failed to retrieve transaction history",
-      CONSTANTS.ERROR_CODES.SERVER_ERROR,
-      error,
-    );
+    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve transaction history", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
   }
 };
 

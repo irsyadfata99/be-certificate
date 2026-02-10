@@ -1,5 +1,5 @@
 // controllers/ExportController.js - UPDATED for Phase 4
-// Added student export functions
+// Added student export functions and regional hub filter for logs
 
 const pool = require("../config/database");
 const ExcelJS = require("exceljs");
@@ -103,29 +103,51 @@ const exportCertificates = async (req, res) => {
 };
 
 // =====================================================
-// 2. EXPORT CERTIFICATE LOGS
+// 2. EXPORT CERTIFICATE LOGS (WITH REGIONAL HUB FILTER)
 // =====================================================
 const exportCertificateLogs = async (req, res) => {
   try {
-    logger.info("Exporting certificate logs to Excel");
+    const { regional_hub: regionalHub } = req.query;
 
-    const result = await pool.query(`
+    logger.info("Exporting certificate logs to Excel", { regional_hub: regionalHub });
+
+    let query = `
       SELECT 
-        certificate_id as "Certificate ID",
-        action_type as "Action Type",
-        description as "Description",
-        from_branch as "From Branch",
-        to_branch as "To Branch",
-        certificate_amount as "Certificate Amount",
-        medal_amount as "Medal Amount",
-        performed_by as "Performed By",
-        created_at as "Created At"
-      FROM certificate_logs
-      ORDER BY created_at DESC
-    `);
+        cl.certificate_id as "Certificate ID",
+        cl.action_type as "Action Type",
+        cl.description as "Description",
+        cl.from_branch as "From Branch",
+        cl.to_branch as "To Branch",
+        cl.certificate_amount as "Certificate Amount",
+        cl.medal_amount as "Medal Amount",
+        cl.performed_by as "Performed By",
+        cl.created_at as "Created At"
+      FROM certificate_logs cl
+    `;
+
+    const params = [];
+    let paramCount = 1;
+
+    // Filter by regional hub if specified
+    if (regionalHub && regionalHub.trim()) {
+      query += `
+        INNER JOIN certificate_stock cs ON cl.certificate_id = cs.certificate_id
+        INNER JOIN branches b ON cs.branch_code = b.branch_code
+        WHERE b.regional_hub = $${paramCount}
+        GROUP BY cl.id, cl.certificate_id, cl.action_type, cl.description, 
+                 cl.from_branch, cl.to_branch, cl.certificate_amount, 
+                 cl.medal_amount, cl.performed_by, cl.created_at
+      `;
+      params.push(regionalHub.trim());
+    }
+
+    query += " ORDER BY cl.created_at DESC";
+
+    const result = await pool.query(query, params);
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Certificate Logs");
+    const worksheetName = regionalHub ? `Logs - ${regionalHub}` : "Certificate Logs";
+    const worksheet = workbook.addWorksheet(worksheetName);
 
     worksheet.columns = [
       { header: "Certificate ID", key: "Certificate ID", width: 15 },
@@ -146,11 +168,13 @@ const exportCertificateLogs = async (req, res) => {
     formatHeader(worksheet);
     autoFitColumns(worksheet);
 
+    const filename = regionalHub ? `certificate_logs_${regionalHub}_${new Date().toISOString().split("T")[0]}.xlsx` : `certificate_logs_${new Date().toISOString().split("T")[0]}.xlsx`;
+
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename=certificate_logs_${new Date().toISOString().split("T")[0]}.xlsx`);
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
 
     await workbook.xlsx.write(res);
-    logger.info("Certificate logs exported successfully");
+    logger.info(`Certificate logs exported successfully${regionalHub ? ` for ${regionalHub}` : ""}`);
     res.end();
   } catch (error) {
     logger.error("Export certificate logs error:", error);
