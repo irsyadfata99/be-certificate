@@ -63,8 +63,8 @@ module.exports = {
     JK: {
       name: "Junior Koder",
       ranges: [
-        { min: 8, max: 12, label: "JK Level 1 (8-12 tahun)" },
-        { min: 12, max: 16, label: "JK Level 2 (12-16 tahun)" },
+        { min: 8, max: 12, label: "JK Level 1 (8-12)" },
+        { min: 12, max: 16, label: "JK Level 2 (12-16)" },
       ],
       overall_min: 8,
       overall_max: 16,
@@ -72,8 +72,8 @@ module.exports = {
     LK: {
       name: "Little Koder",
       ranges: [
-        { min: 4, max: 6, label: "LK Level 1 (4-6 tahun)" },
-        { min: 6, max: 8, label: "LK Level 2 (6-8 tahun)" },
+        { min: 4, max: 6, label: "LK Level 1 (4-6)" },
+        { min: 6, max: 8, label: "LK Level 2 (6-8)" },
       ],
       overall_min: 4,
       overall_max: 8,

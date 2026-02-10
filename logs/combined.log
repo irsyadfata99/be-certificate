@@ -4005,3 +4005,1008 @@
 {"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-10 11:58:14"}
 {"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-10 11:58:17"}
 {"level":"info","message":"HTTP server closed","service":"certificate-management-api","timestamp":"2026-02-10 11:58:22"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:34:41"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 13:34:43"}
+{"cause":{},"level":"error","message":"❌ Database connection test failed: Connection terminated due to connection timeout","service":"certificate-management-api","stack":"Error: Connection terminated due to connection timeout\n    at Client._connectionCallback (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:262:17)\n    at Connection.<anonymous> (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg\\lib\\client.js:190:18)\n    at Object.onceWrapper (node:events:622:28)\n    at Connection.emit (node:events:508:28)\n    at Socket.<anonymous> (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg\\lib\\connection.js:61:12)\n    at Socket.emit (node:events:508:28)\n    at TCP.<anonymous> (node:net:346:12)","timestamp":"2026-02-10 13:34:43"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-10 13:34:48"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:34:50"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-10 13:34:52"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-10 13:35:13"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-10 13:35:13"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"Successful login: gulam (admin)","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","limit":"1","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"Certificates retrieved: 1/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","limit":"1","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"Certificates retrieved: 1/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:35:20"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Returned 1/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Returned 1/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Returned 1/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Logs retrieved: 5/13 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Logs retrieved: 5/13 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"Returned 1/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:21"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:35:24"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Certificates retrieved: 3/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Certificates retrieved: 1/3 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"Certificates retrieved: 3/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:25"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:26"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"Logs retrieved: 10/13 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"Logs retrieved: 10/13 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:27"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:28"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Certificates retrieved: 3/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Certificates retrieved: 1/3 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"Certificates retrieved: 3/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:35:29"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:31"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:35"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:35"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:35"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:35:35"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"Returned 6/6 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:37"}
+{"level":"info","message":"POST /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:51"}
+{"level":"info","message":"Teacher created: nisya with 2 divisions and 1 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:35:51"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:51"}
+{"level":"info","message":"Returned 7/7 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:35:51"}
+{"level":"info","message":"POST /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:36:14"}
+{"level":"info","message":"Teacher created: eva with 1 divisions and 1 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:14"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:36:14"}
+{"level":"info","message":"Returned 8/8 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:36:14"}
+{"level":"info","message":"POST /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:36:29"}
+{"level":"info","message":"Teacher created: fakhri with 1 divisions and 1 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:29"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:36:29"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:36:29"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:36:35"}
+{"level":"info","message":"Certificates retrieved: 1/3 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"Certificates retrieved: 3/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"Certificates retrieved: 3/3 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:36:36"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:36:39"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:36:39"}
+{"level":"info","message":"Certificates retrieved: 1/3 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:36:39"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:36:56"}
+{"certificate_id":"SND-BATCH-002","jumlah_medali":15,"jumlah_sertifikat":21,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:36:56","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-002 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 13:36:56"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:36:56"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:36:56"}
+{"level":"info","message":"Certificates retrieved: 2/4 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:36:56"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:37:01"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:37:01"}
+{"level":"info","message":"Certificates retrieved: 2/4 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:37:01"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:37:13"}
+{"certificate_id":"SND-BATCH-003","jumlah_medali":11,"jumlah_sertifikat":21,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:37:13","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-003 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 13:37:13"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:37:13"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:37:13"}
+{"level":"info","message":"Certificates retrieved: 3/5 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:37:13"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:37:27"}
+{"certificate_id":"SND-BATCH-004","jumlah_medali":10,"jumlah_sertifikat":11,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:37:27","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-004 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 13:37:27"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:37:27"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:37:27"}
+{"level":"info","message":"Certificates retrieved: 4/6 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:37:27"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11"}
+{"certificate_id":"SND-BATCH-005","jumlah_medali":10,"jumlah_sertifikat":11,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-005 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:11"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:14"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:14"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:14"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:30"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:30"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:30"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:32"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:32"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:32"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:46"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:46"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:46"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:48"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:48"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:48"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:49"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:49"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:49"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:38:56"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:38:56"}
+{"level":"info","message":"Certificates retrieved: 5/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:38:56"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:07"}
+{"certificate_id":"SND-BATCH-006","jumlah_medali":11,"jumlah_sertifikat":10,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:39:07","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-006 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:07"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:07"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:39:07"}
+{"level":"info","message":"Certificates retrieved: 6/8 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:07"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:21"}
+{"certificate_id":"SND-BATCH-007","jumlah_medali":4,"jumlah_sertifikat":5,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:39:21","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-007 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:39:21"}
+{"level":"info","message":"Certificates retrieved: 7/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:26"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:39:26"}
+{"level":"info","message":"Certificates retrieved: 1/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:26"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:45"}
+{"certificate_id":"PIK-BATCH-002","jumlah_medali":3,"jumlah_sertifikat":5,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:39:45","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-002 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:45"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:45"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:39:45"}
+{"level":"info","message":"Certificates retrieved: 2/10 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:45"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:54"}
+{"certificate_id":"PIK-BATCH-003","jumlah_medali":3,"jumlah_sertifikat":2,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:39:54","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-003 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:54"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:54"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:39:54"}
+{"level":"info","message":"Certificates retrieved: 3/11 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:54"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:39:58"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:39:58"}
+{"level":"info","message":"Certificates retrieved: 0/11 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:39:58"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:02"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:02"}
+{"level":"info","message":"Certificates retrieved: 3/11 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:40:02"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:22"}
+{"certificate_id":"PIK-BATCH-003","jumlah_medali":5,"jumlah_sertifikat":4,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:22","userBranch":"PIK","userRole":"admin"}
+{"level":"error","message":"Error (409): Certificate batch ID already exists","service":"certificate-management-api","timestamp":"2026-02-10 13:40:22"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:28"}
+{"certificate_id":"PIK-BATCH-004","jumlah_medali":5,"jumlah_sertifikat":4,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:28","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-004 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:40:28"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:28"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:28"}
+{"level":"info","message":"Certificates retrieved: 4/12 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:40:28"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:52"}
+{"certificate_id":"PIK-BATCH-004","jumlah_medali":5,"jumlah_sertifikat":2,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:52","userBranch":"PIK","userRole":"admin"}
+{"level":"error","message":"Error (409): Certificate batch ID already exists","service":"certificate-management-api","timestamp":"2026-02-10 13:40:52"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:56"}
+{"certificate_id":"PIK-BATCH-005","jumlah_medali":5,"jumlah_sertifikat":2,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:56","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-005 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:40:56"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:40:56"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:40:56"}
+{"level":"info","message":"Certificates retrieved: 5/13 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:40:56"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:06"}
+{"certificate_id":"PIK-BATCH-006","jumlah_medali":2,"jumlah_sertifikat":6,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:06","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-006 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:06"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:06"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:06"}
+{"level":"info","message":"Certificates retrieved: 6/14 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:06"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:19"}
+{"certificate_id":"PIK-BATCH-007","jumlah_medali":3,"jumlah_sertifikat":4,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:19","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-007 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:19"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:19"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:19"}
+{"level":"info","message":"Certificates retrieved: 7/15 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:19"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:29"}
+{"certificate_id":"PIK-BATCH-008","jumlah_medali":5,"jumlah_sertifikat":6,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:29","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-008 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:29"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:29"}
+{"level":"info","message":"Certificates retrieved: 8/16 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:34"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:41:34"}
+{"level":"info","message":"Certificates retrieved: 7/16 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:34"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:39"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:41:39"}
+{"level":"info","message":"Certificates retrieved: 0/16 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:39"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:42"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:42"}
+{"level":"info","message":"Certificates retrieved: 8/16 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:42"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:46"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:46"}
+{"level":"info","message":"Certificates retrieved: 0/16 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:46"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:48"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:48"}
+{"level":"info","message":"Certificates retrieved: 8/16 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:48"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:56"}
+{"certificate_id":"PIK-BATCH-009","jumlah_medali":3,"jumlah_sertifikat":4,"level":"info","message":"Create certificate request:","requestedBranch":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:56","userBranch":"PIK","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: PIK-BATCH-009 at PIK (PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:56"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:56"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:56"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:56"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:41:58"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:41:59"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:41:59"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:00"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:42:00"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:00"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:02"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:42:02"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:02"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:04"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:42:04"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:04"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:06"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:42:06"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:06"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:08"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"16","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:42:08"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:08"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:11"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:42:11"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:11"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:14"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:42:14"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:14"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:15"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:42:15"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:15"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:16"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:42:16"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:16"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:42:17"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:42:17"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:42:17"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:42:22"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:26"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:29"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:29"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:30"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:42:30"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:32"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:32"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:32"}
+{"level":"info","message":"Returned 5/5 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:32"}
+{"level":"info","message":"POST /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:48"}
+{"level":"info","message":"Module created: PYTHON-A","service":"certificate-management-api","timestamp":"2026-02-10 13:42:48"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:48"}
+{"level":"info","message":"Returned 6/6 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:42:48"}
+{"level":"info","message":"POST /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:06"}
+{"level":"info","message":"Module created: javascript","service":"certificate-management-api","timestamp":"2026-02-10 13:43:06"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:06"}
+{"level":"info","message":"Returned 7/7 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:06"}
+{"level":"info","message":"POST /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:17"}
+{"level":"info","message":"Module created: iot","service":"certificate-management-api","timestamp":"2026-02-10 13:43:17"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:17"}
+{"level":"info","message":"Returned 8/8 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:17"}
+{"level":"info","message":"POST /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:33"}
+{"level":"info","message":"Module created: 2D3D","service":"certificate-management-api","timestamp":"2026-02-10 13:43:33"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:33"}
+{"level":"info","message":"Returned 8/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:43:33"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:41"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:41"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:43:41"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:43:41"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"Retrieved 5 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:43:42"}
+{"level":"info","message":"POST /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"branchCode":"SMC","branchName":"Summarecon","isHeadBranch":false,"level":"info","message":"Create branch request:","regionalHub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"Branch created successfully: SMC - Summarecon (under SND)","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"Retrieved 6 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:00"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:07"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:07"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:07"}
+{"level":"info","message":"Retrieved 6 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:07"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:07"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:08"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:08"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:08"}
+{"level":"info","message":"Retrieved 6 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:08"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:08"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:20"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:20"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:20"}
+{"level":"info","message":"Retrieved 6 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:20"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:20"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:21"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:21"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:21"}
+{"level":"info","message":"Retrieved 6 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:21"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:21"}
+{"level":"info","message":"POST /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"branchCode":"PIK1","branchName":"PIK-1","isHeadBranch":false,"level":"info","message":"Create branch request:","regionalHub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"Branch created successfully: PIK1 - PIK-1 (under PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"Retrieved 7 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:38"}
+{"level":"info","message":"POST /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"branchCode":"PIK2","branchName":"PIK-2","isHeadBranch":false,"level":"info","message":"Create branch request:","regionalHub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"Branch created successfully: PIK2 - PIK-2 (under PIK)","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"Retrieved 8 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:44:56"}
+{"level":"info","message":"POST /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"branchCode":"BSD1","branchName":"BSD-2","isHeadBranch":false,"level":"info","message":"Create branch request:","regionalHub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"Branch created successfully: BSD1 - BSD-2 (under BSD)","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:45:16"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:20"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"Certificates retrieved: 8/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"Certificates retrieved: 8/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:45:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:30"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:45:30"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:45:30"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:31"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:45:31"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:45:31"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:37"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:45:37"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:45:37"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:45:42"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:45:42"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:45:42"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:43"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:47:43"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:47:43"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:43"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:45"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:47:45"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:45"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:45"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:47:45"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:45"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:47"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:47:47"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:47"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:55"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:47:55"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:55"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:57"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:47:57"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:57"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:47:58"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:47:58"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:47:58"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:00"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:48:00"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:00"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:02"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:48:02"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:02"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:03"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:48:03"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:03"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:19"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:48:19"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:19"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:20"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:48:20"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:20"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:22"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:48:22"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:22"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:24"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:48:24"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:24"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:26"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:48:26"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:26"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:48:27"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:48:27"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:48:27"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:48:46"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:48"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:48:48"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:48:48"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:48"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:48:48"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:50"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:48:50"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:48:50"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:50"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:48:50"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:52"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:54"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:54"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:55"}
+{"level":"info","message":"Returned 9/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:48:55"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:48:58"}
+{"level":"info","message":"Returned 8/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:48:58"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:48:58"}
+{"level":"info","message":"Returned 8/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:48:58"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:31"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:31"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:49:31"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"Logs retrieved: 10/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"Logs retrieved: 10/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:32"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:42"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:49:42"}
+{"level":"info","message":"Logs retrieved: 2/2 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:49:42"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:44"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:49:44"}
+{"level":"info","message":"Logs retrieved: 9/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:49:44"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:47"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:49:47"}
+{"level":"info","message":"Logs retrieved: 9/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:49:47"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:49"}
+{"level":"info","limit":"10","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:49:49"}
+{"level":"info","message":"Logs retrieved: 10/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:49"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","limit":"1","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Certificates retrieved: 1/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","limit":"1","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Certificates retrieved: 1/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Returned 1/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Returned 1/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Logs retrieved: 5/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Logs retrieved: 5/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:49:51"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:50:05"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","limit":"1","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Certificates retrieved: 1/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","limit":"1","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Certificates retrieved: 1/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/modules","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Returned 1/9 modules","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Returned 1/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"GET /api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:51:06"}
+{"level":"info","message":"Returned 1/9 teachers","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"Logs retrieved: 5/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"GET /api/logs","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","limit":"5","message":"Fetching logs with filters:","offset":"0","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"GET /api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"Fetching stock summary...","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"Logs retrieved: 5/27 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"Stock summary generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:51:07"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 13:51:09"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Certificates retrieved: 8/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Certificates retrieved: 8/17 records ","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 13:51:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:52:48"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:52:48"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:52:48"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:52:48"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:52:54"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 13:52:54"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:52:54"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:52:58"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:52:58"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:52:58"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:52:59"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 13:52:59"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:52:59"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:53:01"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:53:01"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:53:01"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:53:45"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:53:45"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 13:53:45"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:53:45"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 13:53:47"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 13:53:47"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 13:53:47"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:00:34"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:39"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:00:39"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:39"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:42"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:00:42"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:42"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:43"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"16","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:00:43"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:43"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:45"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"16","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 14:00:45"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:45"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 14:00:45"}
+{"level":"info","message":"Certificates retrieved: 0/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:45"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:45"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:00:47"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:00:47"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:00:47"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"Certificates retrieved: 7/17 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:08:29"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"GET /api/branches/stats","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"Branch statistics generated successfully","service":"certificate-management-api","timestamp":"2026-02-10 14:08:32"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"Certificates retrieved: 1/17 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:08:33"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:08:36"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:08:36"}
+{"level":"info","message":"Certificates retrieved: 8/17 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:08:36"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-10 14:08:45"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-10 14:08:48"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 14:08:50"}
+{"cause":{},"level":"error","message":"❌ Database connection test failed: Connection terminated due to connection timeout","service":"certificate-management-api","stack":"Error: Connection terminated due to connection timeout\n    at Client._connectionCallback (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:262:17)\n    at Connection.<anonymous> (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg\\lib\\client.js:190:18)\n    at Object.onceWrapper (node:events:622:28)\n    at Connection.emit (node:events:508:28)\n    at Socket.<anonymous> (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg\\lib\\connection.js:61:12)\n    at Socket.emit (node:events:508:28)\n    at TCP.<anonymous> (node:net:346:12)","timestamp":"2026-02-10 14:08:50"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-10 14:11:23"}
+{"level":"info","message":"🔌 Testing database connection...","service":"certificate-management-api","timestamp":"2026-02-10 14:12:59"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 1/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:12:59"}
+{"level":"warn","message":"⏳ Retrying in 2 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:12:59"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 2/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:01"}
+{"level":"warn","message":"⏳ Retrying in 3 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:01"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 3/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:04"}
+{"level":"warn","message":"⏳ Retrying in 4.5 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:04"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 4/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:09"}
+{"level":"warn","message":"⏳ Retrying in 6.75 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:09"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 5/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:15"}
+{"level":"info","message":"🔌 Testing database connection...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:21"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 1/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:21"}
+{"level":"warn","message":"⏳ Retrying in 2 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:21"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 2/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:23"}
+{"level":"warn","message":"⏳ Retrying in 3 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:23"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 3/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:26"}
+{"level":"warn","message":"⏳ Retrying in 4.5 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:26"}
+{"error":"database \"certificate_db\" does not exist","level":"error","message":"❌ Database connection test failed (attempt 4/5)","service":"certificate-management-api","stack":"error: database \"certificate_db\" does not exist\n    at C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async testConnection (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\config\\database.js:65:22)\n    at async startServer (C:\\Users\\Irsyad KN- MKW\\Documents\\project\\fullstack-certif\\backend\\server.js:127:5)","timestamp":"2026-02-10 14:13:30"}
+{"level":"warn","message":"⏳ Retrying in 6.75 seconds...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:30"}
+{"level":"info","message":"🔌 Closing database connections gracefully...","service":"certificate-management-api","timestamp":"2026-02-10 14:13:32"}
+{"level":"info","message":"✅ Environment variables validated successfully","service":"certificate-management-api","timestamp":"2026-02-10 14:13:47"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"🚀 Server running on port 3000","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"📝 Environment: development","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"🔗 API: http://localhost:3000","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"📊 Summary: http://localhost:3000/api/certificates/summary","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"👥 Teachers: http://localhost:3000/api/teachers","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"📚 Modules: http://localhost:3000/api/modules","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"📜 Printed Certificates: http://localhost:3000/api/printed-certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"📥 Export Data: http://localhost:3000/api/export","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"🔄 Refresh Token: http://localhost:3000/api/auth/refresh-token","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"==================================================","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"✅ Database connection test successful","service":"certificate-management-api","timestamp":"2026-02-10 14:13:49"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Certificates retrieved: 1/1 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:14:02"}
+{"level":"info","message":"POST /api/auth/login","service":"certificate-management-api","timestamp":"2026-02-10 14:14:03"}
+{"level":"error","message":"Error (400): Username and password are required","service":"certificate-management-api","timestamp":"2026-02-10 14:14:03"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:05"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:14:05"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:05"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:07"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:14:07"}
+{"level":"info","message":"Certificates retrieved: 1/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:07"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:09"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:09"}
+{"level":"info","message":"Certificates retrieved: 0/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:09"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:09"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:09"}
+{"level":"info","message":"Certificates retrieved: 7/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:09"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:21"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:21"}
+{"level":"info","message":"Certificates retrieved: 7/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:21"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:22"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:22"}
+{"level":"info","message":"Certificates retrieved: 7/7 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:22"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:36"}
+{"certificate_id":"SND-BATCH-008","jumlah_medali":32,"jumlah_sertifikat":24,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:36","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-008 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:36"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:36"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:36"}
+{"level":"info","message":"Certificates retrieved: 8/8 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:36"}
+{"level":"info","message":"POST /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:47"}
+{"certificate_id":"SND-BATCH-009","jumlah_medali":2,"jumlah_sertifikat":3,"level":"info","message":"Create certificate request:","requestedBranch":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:47","userBranch":"SND","userRole":"admin"}
+{"level":"info","message":"Certificate batch created successfully: SND-BATCH-009 at SND (Sunda)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:47"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:47"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:47"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:47"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:50"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:50"}
+{"level":"info","message":"Certificates retrieved: 1/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:50"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:51"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:51"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:51"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:52"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:14:52"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:52"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:54"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"8","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:14:54"}
+{"level":"info","message":"Certificates retrieved: 1/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:54"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:55"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:14:55"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:55"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:14:56"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:14:56"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:14:56"}
+{"level":"info","message":"GET /api/branches/head-branches","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"GET /api/branches","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"Get all branches request","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"✅ Connected to PostgreSQL database","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"Retrieved 3 head branches","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"Retrieved 9 branches","service":"certificate-management-api","timestamp":"2026-02-10 14:17:24"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:17:29"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:17:29"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:17:29"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:17:36"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"BSD","service":"certificate-management-api","timestamp":"2026-02-10 14:17:36"}
+{"level":"info","message":"Certificates retrieved: 1/1 records (filtered by BSD regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:17:36"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:17:38"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"PIK","service":"certificate-management-api","timestamp":"2026-02-10 14:17:38"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by PIK regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:17:38"}
+{"level":"info","message":"GET /api/certificates","service":"certificate-management-api","timestamp":"2026-02-10 14:17:39"}
+{"level":"info","limit":"8","message":"Get all certificates request:","offset":"0","regional_hub":"SND","service":"certificate-management-api","timestamp":"2026-02-10 14:17:39"}
+{"level":"info","message":"Certificates retrieved: 8/9 records (filtered by SND regional hub)","service":"certificate-management-api","timestamp":"2026-02-10 14:17:39"}
+{"level":"info","message":"SIGINT signal received: closing HTTP server","service":"certificate-management-api","timestamp":"2026-02-10 14:17:49"}

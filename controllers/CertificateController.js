@@ -1,5 +1,5 @@
 // controllers/CertificateController.js - WITH REGIONAL HUB FILTERING
-// Version 2.2 - Added regional_hub query parameter for filtering
+// Version 2.3 - FIXED count query to respect regional_hub filter
 
 const pool = require("../config/database");
 const { logAction } = require("./CertificateLogsController");
@@ -183,6 +183,7 @@ const createCertificate = async (req, res) => {
 
 // =====================================================
 // 2. GET ALL CERTIFICATES (WITH REGIONAL HUB FILTER)
+// VERSION 2.3 - FIXED COUNT QUERY
 // =====================================================
 const getAllCertificates = async (req, res) => {
   try {
@@ -216,8 +217,6 @@ const getAllCertificates = async (req, res) => {
     }
 
     // NEW: Regional hub filter - CRITICAL FIX
-    // We need to filter at the certificate level, not just stock level
-    // Only show certificates that have AT LEAST ONE stock entry in the selected regional hub
     let regionalHubJoin = "";
     if (regional_hub && regional_hub.trim()) {
       const hubParamIndex = paramCount;
@@ -289,14 +288,46 @@ const getAllCertificates = async (req, res) => {
 
     const result = await pool.query(query, queryParams);
 
-    // Get total count for pagination
+    // ===== CRITICAL FIX: Count query must also respect regional_hub filter =====
     let countQuery = "SELECT COUNT(*) FROM certificates c";
     const countParams = [];
+    let countParamNum = 1;
 
+    // IMPORTANT: Use same WHERE clause as main query
+    let countWhereClause = "";
+
+    // Search filter
     if (search && search.trim()) {
-      countQuery += " WHERE c.certificate_id ILIKE $1";
+      countWhereClause = `WHERE c.certificate_id ILIKE $${countParamNum}`;
       countParams.push(`%${search.trim()}%`);
+      countParamNum++;
     }
+
+    // Regional hub filter (CRITICAL - was missing before!)
+    if (regional_hub && regional_hub.trim()) {
+      if (countWhereClause) {
+        countWhereClause += ` AND EXISTS (
+          SELECT 1 FROM certificate_stock cs2
+          JOIN branches b2 ON cs2.branch_code = b2.branch_code
+          WHERE cs2.certificate_id = c.certificate_id
+          AND b2.regional_hub = $${countParamNum}
+        )`;
+      } else {
+        countWhereClause = `WHERE EXISTS (
+          SELECT 1 FROM certificate_stock cs2
+          JOIN branches b2 ON cs2.branch_code = b2.branch_code
+          WHERE cs2.certificate_id = c.certificate_id
+          AND b2.regional_hub = $${countParamNum}
+        )`;
+      }
+      countParams.push(regional_hub.trim());
+      countParamNum++;
+    }
+
+    countQuery += ` ${countWhereClause}`;
+
+    logger.debug("Count Query:", countQuery);
+    logger.debug("Count Params:", countParams);
 
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);

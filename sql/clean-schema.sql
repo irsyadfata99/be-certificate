@@ -874,11 +874,11 @@ BEGIN
     RAISE NOTICE '';
     RAISE NOTICE 'DIVISIONS WITH CORRECT AGE RANGES:';
     RAISE NOTICE '- JK (Junior Koder): 8-16 tahun';
-    RAISE NOTICE '  * Level 1: 8-12 tahun';
-    RAISE NOTICE '  * Level 2: 12-16 tahun';
+    RAISE NOTICE '  * Level 1: 8-12';
+    RAISE NOTICE '  * Level 2: 12-16';
     RAISE NOTICE '- LK (Little Koder): 4-8 tahun';
-    RAISE NOTICE '  * Level 1: 4-6 tahun';
-    RAISE NOTICE '  * Level 2: 6-8 tahun';
+    RAISE NOTICE '  * Level 1: 4-6';
+    RAISE NOTICE '  * Level 2: 6-8';
     RAISE NOTICE '';
     RAISE NOTICE 'REGIONAL HUB SUPPORT:';
     RAISE NOTICE '- SND (Sunda) - HEAD BRANCH';
