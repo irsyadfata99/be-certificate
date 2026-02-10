@@ -57,8 +57,10 @@ const PrintedCertificateController = {
       let queryParams = [searchTerm];
       let paramCount = 2;
 
+      // FIX: students table uses branch_id (FK to branches.id), not branch_code
+      // Join to branches and filter by branch_code via the join
       if (branchCode && branchCode.trim()) {
-        whereConditions.push(`s.branch_code = $${paramCount}`);
+        whereConditions.push(`b.branch_code = $${paramCount}`);
         queryParams.push(branchCode.trim().toUpperCase());
         paramCount++;
       }
@@ -67,10 +69,10 @@ const PrintedCertificateController = {
         SELECT 
           s.id,
           s.student_name,
-          s.branch_code,
+          b.branch_code,
           b.branch_name
         FROM students s
-        LEFT JOIN branches b ON s.branch_code = b.branch_code
+        LEFT JOIN branches b ON s.branch_id = b.id
         WHERE ${whereConditions.join(" AND ")}
         ORDER BY s.student_name
         LIMIT $${paramCount}
@@ -212,12 +214,14 @@ const PrintedCertificateController = {
       }
 
       // ===== AUTO-LINK STUDENT IF NOT PROVIDED =====
+      // FIX: students table uses branch_id, join to branches to filter by branch_code
       if (!studentIdNum) {
         const studentSearch = await client.query(
-          `SELECT id FROM students 
-           WHERE LOWER(student_name) = LOWER($1) 
-           AND branch_code = $2 
-           AND status = 'active'
+          `SELECT s.id FROM students s
+           JOIN branches b ON s.branch_id = b.id
+           WHERE LOWER(s.student_name) = LOWER($1) 
+           AND b.branch_code = $2 
+           AND s.status = 'active'
            LIMIT 1`,
           [cleanStudentName, userBranch],
         );
@@ -433,6 +437,7 @@ const PrintedCertificateController = {
       const totalRecords = parseInt(countResult.rows[0].total);
 
       // Get paginated data
+      // FIX: subquery student_info menggunakan s.branch_id (FK), bukan s.branch_code
       const dataQuery = `
         SELECT 
           pc.id,
@@ -451,7 +456,7 @@ const PrintedCertificateController = {
             WHEN pc.student_id IS NOT NULL THEN 
               (SELECT json_build_object(
                 'id', s.id,
-                'branch_code', s.branch_code,
+                'branch_id', s.branch_id,
                 'status', s.status
               ) FROM students s WHERE s.id = pc.student_id)
             ELSE NULL
@@ -513,6 +518,7 @@ const PrintedCertificateController = {
 
       let query, queryParams;
 
+      // FIX: subquery student_info menggunakan s.branch_id (FK), bukan s.branch_code
       if (userRole === "teacher") {
         query = `
           SELECT 
@@ -531,7 +537,7 @@ const PrintedCertificateController = {
               WHEN pc.student_id IS NOT NULL THEN 
                 (SELECT json_build_object(
                   'id', s.id,
-                  'branch_code', s.branch_code,
+                  'branch_id', s.branch_id,
                   'status', s.status
                 ) FROM students s WHERE s.id = pc.student_id)
               ELSE NULL
@@ -560,7 +566,7 @@ const PrintedCertificateController = {
               WHEN pc.student_id IS NOT NULL THEN 
                 (SELECT json_build_object(
                   'id', s.id,
-                  'branch_code', s.branch_code,
+                  'branch_id', s.branch_id,
                   'status', s.status
                 ) FROM students s WHERE s.id = pc.student_id)
               ELSE NULL

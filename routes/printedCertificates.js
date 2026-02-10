@@ -1,40 +1,41 @@
-// routes/printedCertificates.js
-// Certificate printing routes with authentication
-
+// routes/printedCertificateRoutes.js
 const express = require("express");
 const router = express.Router();
-const PrintedCertificateController = require("../controllers/PrintedCertificateController");
+const {
+  getModules,
+  searchStudents,
+  savePrintRecord,
+  getPrintHistory,
+  getPrintRecordById,
+} = require("../controllers/PrintedCertificateController");
 const { verifyToken } = require("../auth/AuthMiddleware");
 
 // =====================================================
 // ALL ROUTES REQUIRE AUTHENTICATION
 // =====================================================
+router.use(verifyToken);
 
-// Get modules for dropdown (teachers)
-router.get("/modules", verifyToken, PrintedCertificateController.getModules);
+// =====================================================
+// SUPPORT ENDPOINTS FOR PRINTING
+// =====================================================
 
-// Search students for autocomplete
-router.get(
-  "/search-students",
-  verifyToken,
-  PrintedCertificateController.searchStudents,
-);
+// Get modules for dropdown (used in print form)
+router.get("/modules", getModules);
 
-// Save printed certificate record + deduct stock
-router.post("/", verifyToken, PrintedCertificateController.savePrintRecord);
+// Search students for autocomplete (used in print form)
+router.get("/search-students", searchStudents);
 
-// Get print history with pagination and filters
-router.get(
-  "/history",
-  verifyToken,
-  PrintedCertificateController.getPrintHistory,
-);
+// =====================================================
+// PRINT RECORD OPERATIONS
+// =====================================================
 
-// Get single print record by ID
-router.get(
-  "/:id",
-  verifyToken,
-  PrintedCertificateController.getPrintRecordById,
-);
+// Get print history with filters (for history page - future feature)
+router.get("/history", getPrintHistory);
+
+// Save new print record (after printing)
+router.post("/", savePrintRecord);
+
+// Get single print record by ID (for details view - future feature)
+router.get("/:id", getPrintRecordById);
 
 module.exports = router;

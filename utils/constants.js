@@ -136,4 +136,9 @@ module.exports = {
     CONFLICT: 409,
     SERVER_ERROR: 500,
   },
+
+  PRINTED_CERTS: "/printed-certificates",
+  PRINTED_CERT_MODULES: "/printed-certificates/modules",
+  PRINTED_CERT_HISTORY: "/printed-certificates/history",
+  PRINTED_CERT_SEARCH_STUDENTS: "/printed-certificates/search-students",
 };
