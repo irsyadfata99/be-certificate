@@ -1,6 +1,5 @@
-// controllers/StudentController.js
-// Student Management Controller - Phase 1
-// Handles CRUD operations for students with branch and division tracking
+// controllers/StudentController.js - WITH REGIONAL HUB SUPPORT
+// Version 2.0 - Student transfers only within same regional hub
 
 const pool = require("../config/database");
 const logger = require("../utils/logger");
@@ -16,30 +15,57 @@ const createStudent = async (req, res) => {
 
   try {
     await client.query("BEGIN");
-    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
-    const { student_name: studentName, branch_id: branchId, division, date_of_birth: dateOfBirth, parent_name: parentName, parent_phone: parentPhone, parent_email: parentEmail, address, notes } = req.body;
+    const {
+      student_name: studentName,
+      branch_id: branchId,
+      division,
+      date_of_birth: dateOfBirth,
+      parent_name: parentName,
+      parent_phone: parentPhone,
+      parent_email: parentEmail,
+      address,
+      notes,
+    } = req.body;
 
     logger.info("Create student request:", { studentName, branchId, division });
 
     // Validation - Required fields
     if (!studentName || !branchId || !division) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Student name, branch, and division are required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Student name, branch, and division are required",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate student name
     const cleanName = validators.sanitizeString(studentName.trim());
     if (cleanName.length < 3) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Student name must be at least 3 characters", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Student name must be at least 3 characters",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate division
     const divisionValidation = validators.validateDivision(division);
     if (!divisionValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, divisionValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        divisionValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const cleanDivision = divisionValidation.value;
@@ -48,20 +74,38 @@ const createStudent = async (req, res) => {
     const branchIdNum = parseInt(branchId);
     if (isNaN(branchIdNum)) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid branch ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid branch ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Check if branch exists and is active
-    const branchCheck = await client.query("SELECT id, branch_name, is_active FROM branches WHERE id = $1", [branchIdNum]);
+    const branchCheck = await client.query(
+      "SELECT id, branch_name, is_active FROM branches WHERE id = $1",
+      [branchIdNum],
+    );
 
     if (branchCheck.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Branch not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Branch not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     if (!branchCheck.rows[0].is_active) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Cannot assign student to inactive branch", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Cannot assign student to inactive branch",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate date_of_birth format if provided
@@ -69,7 +113,12 @@ const createStudent = async (req, res) => {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(dateOfBirth)) {
         await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid date of birth format. Use YYYY-MM-DD", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          "Invalid date of birth format. Use YYYY-MM-DD",
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
     }
 
@@ -78,7 +127,12 @@ const createStudent = async (req, res) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(parentEmail.trim())) {
         await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid email format", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          "Invalid email format",
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
     }
 
@@ -116,10 +170,22 @@ const createStudent = async (req, res) => {
     // Handle specific PostgreSQL errors
     if (error.code === "23503") {
       // Foreign key violation
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid branch reference", CONSTANTS.ERROR_CODES.VALIDATION_ERROR, error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid branch reference",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        error,
+      );
     }
 
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to create student", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to create student",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -130,11 +196,24 @@ const createStudent = async (req, res) => {
 // =====================================================
 const getAllStudents = async (req, res) => {
   try {
-    const { limit: limitParam = CONSTANTS.PAGINATION.DEFAULT_LIMIT, offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET, search, branch_id: branchId, division, status } = req.query;
+    const {
+      limit: limitParam = CONSTANTS.PAGINATION.DEFAULT_LIMIT,
+      offset: offsetParam = CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      search,
+      branch_id: branchId,
+      division,
+      status,
+    } = req.query;
 
     // Validate pagination params
-    const limit = Math.min(Math.max(parseInt(limitParam) || CONSTANTS.PAGINATION.DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
-    const offset = Math.max(parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
+    const limit = Math.min(
+      Math.max(parseInt(limitParam) || CONSTANTS.PAGINATION.DEFAULT_LIMIT, 1),
+      CONSTANTS.PAGINATION.MAX_LIMIT,
+    );
+    const offset = Math.max(
+      parseInt(offsetParam) || CONSTANTS.PAGINATION.DEFAULT_OFFSET,
+      0,
+    );
 
     logger.debug("Get students with filters:", {
       limit,
@@ -153,7 +232,9 @@ const getAllStudents = async (req, res) => {
     // Search filter (student_name OR parent_name)
     if (search && search.trim()) {
       const searchTerm = `%${search.trim().toLowerCase()}%`;
-      whereConditions.push(`(LOWER(s.student_name) LIKE $${paramCount} OR LOWER(s.parent_name) LIKE $${paramCount})`);
+      whereConditions.push(
+        `(LOWER(s.student_name) LIKE $${paramCount} OR LOWER(s.parent_name) LIKE $${paramCount})`,
+      );
       queryParams.push(searchTerm);
       paramCount++;
     }
@@ -188,7 +269,10 @@ const getAllStudents = async (req, res) => {
       }
     }
 
-    const whereClause = whereConditions.length > 0 ? "WHERE " + whereConditions.join(" AND ") : "";
+    const whereClause =
+      whereConditions.length > 0
+        ? "WHERE " + whereConditions.join(" AND ")
+        : "";
 
     // Get total count
     const countQuery = `
@@ -236,7 +320,13 @@ const getAllStudents = async (req, res) => {
       count: result.rows.length,
     });
   } catch (error) {
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve students", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve students",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -249,7 +339,12 @@ const getStudentById = async (req, res) => {
 
     const studentId = parseInt(id);
     if (isNaN(studentId)) {
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid student ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid student ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const result = await pool.query(
@@ -275,12 +370,23 @@ const getStudentById = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Student not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Student not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     return sendSuccess(res, "Student retrieved successfully", result.rows[0]);
   } catch (error) {
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve student", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve student",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -292,44 +398,84 @@ const updateStudent = async (req, res) => {
 
   try {
     await client.query("BEGIN");
-    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
     const { id } = req.params;
     const studentId = parseInt(id);
 
     if (isNaN(studentId)) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid student ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid student ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    const { student_name: studentName, branch_id: branchId, division, date_of_birth: dateOfBirth, parent_name: parentName, parent_phone: parentPhone, parent_email: parentEmail, address, notes } = req.body;
+    const {
+      student_name: studentName,
+      branch_id: branchId,
+      division,
+      date_of_birth: dateOfBirth,
+      parent_name: parentName,
+      parent_phone: parentPhone,
+      parent_email: parentEmail,
+      address,
+      notes,
+    } = req.body;
 
     // Check if student exists
-    const existingStudent = await client.query("SELECT id FROM students WHERE id = $1", [studentId]);
+    const existingStudent = await client.query(
+      "SELECT id FROM students WHERE id = $1",
+      [studentId],
+    );
 
     if (existingStudent.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Student not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Student not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     // Validation - Required fields
     if (!studentName || !branchId || !division) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Student name, branch, and division are required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Student name, branch, and division are required",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate student name
     const cleanName = validators.sanitizeString(studentName.trim());
     if (cleanName.length < 3) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Student name must be at least 3 characters", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Student name must be at least 3 characters",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Validate division
     const divisionValidation = validators.validateDivision(division);
     if (!divisionValidation.valid) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, divisionValidation.error, CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        divisionValidation.error,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const cleanDivision = divisionValidation.value;
@@ -338,15 +484,28 @@ const updateStudent = async (req, res) => {
     const branchIdNum = parseInt(branchId);
     if (isNaN(branchIdNum)) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid branch ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid branch ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Check if branch exists and is active
-    const branchCheck = await client.query("SELECT id, branch_name, is_active FROM branches WHERE id = $1", [branchIdNum]);
+    const branchCheck = await client.query(
+      "SELECT id, branch_name, is_active FROM branches WHERE id = $1",
+      [branchIdNum],
+    );
 
     if (branchCheck.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Branch not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Branch not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     // Validate date_of_birth if provided
@@ -354,7 +513,12 @@ const updateStudent = async (req, res) => {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(dateOfBirth)) {
         await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid date of birth format. Use YYYY-MM-DD", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          "Invalid date of birth format. Use YYYY-MM-DD",
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
     }
 
@@ -363,7 +527,12 @@ const updateStudent = async (req, res) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(parentEmail.trim())) {
         await client.query("ROLLBACK");
-        return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid email format", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          "Invalid email format",
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
       }
     }
 
@@ -408,10 +577,22 @@ const updateStudent = async (req, res) => {
     await client.query("ROLLBACK");
 
     if (error.code === "23503") {
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid branch reference", CONSTANTS.ERROR_CODES.VALIDATION_ERROR, error);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid branch reference",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        error,
+      );
     }
 
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to update student", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to update student",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -425,120 +606,243 @@ const deleteStudent = async (req, res) => {
 
   try {
     await client.query("BEGIN");
-    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
     const { id } = req.params;
     const studentId = parseInt(id);
 
     if (isNaN(studentId)) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid student ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid student ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Check if student exists
-    const existingStudent = await client.query("SELECT id, student_name, status FROM students WHERE id = $1", [studentId]);
+    const existingStudent = await client.query(
+      "SELECT id, student_name, status FROM students WHERE id = $1",
+      [studentId],
+    );
 
     if (existingStudent.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Student not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Student not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     const student = existingStudent.rows[0];
 
     if (student.status === "inactive") {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Student is already inactive", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Student is already inactive",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // Soft delete - set status to inactive
-    await client.query("UPDATE students SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [studentId]);
+    await client.query(
+      "UPDATE students SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+      [studentId],
+    );
 
     await client.query("COMMIT");
 
-    logger.info(`Student soft deleted: ${student.student_name} (ID: ${studentId})`);
+    logger.info(
+      `Student soft deleted: ${student.student_name} (ID: ${studentId})`,
+    );
 
     return sendSuccess(res, "Student deleted successfully (set to inactive)");
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to delete student", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to delete student",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
 };
 
 // =====================================================
-// 6. TRANSFER STUDENT
+// 6. TRANSFER STUDENT - SAME REGIONAL HUB ONLY
 // =====================================================
 const transferStudent = async (req, res) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
-    await client.query(`SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`);
+    await client.query(
+      `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
+    );
 
     const { id } = req.params;
-    const { new_branch_id: newBranchId, transfer_reason: transferReason } = req.body;
+    const { new_branch_id: newBranchId, transfer_reason: transferReason } =
+      req.body;
 
     const studentId = parseInt(id);
     if (isNaN(studentId)) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid student ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid student ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     if (!newBranchId) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "New branch ID is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "New branch ID is required",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const newBranchIdNum = parseInt(newBranchId);
     if (isNaN(newBranchIdNum)) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Invalid new branch ID", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid new branch ID",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    // Get current student data
+    // ===== GET STUDENT INFO WITH CURRENT BRANCH REGIONAL HUB =====
     const studentResult = await client.query(
-      `SELECT s.*, b.branch_name as current_branch_name 
+      `SELECT 
+        s.id,
+        s.student_name,
+        s.branch_id,
+        s.division,
+        s.status,
+        b.branch_code as current_branch_code,
+        b.branch_name as current_branch_name,
+        b.regional_hub as current_regional_hub
        FROM students s
-       LEFT JOIN branches b ON s.branch_id = b.id
+       JOIN branches b ON s.branch_id = b.id
        WHERE s.id = $1`,
       [studentId],
     );
 
     if (studentResult.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "Student not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Student not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     const student = studentResult.rows[0];
 
+    // Check if student is active
+    if (student.status !== "active") {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        `Cannot transfer ${student.status} student. Only active students can be transferred.`,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
     // Check if trying to transfer to same branch
     if (student.branch_id === newBranchIdNum) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Student is already in this branch", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Student is already in this branch",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
-    // Check if new branch exists and is active
-    const newBranchResult = await client.query("SELECT id, branch_name, is_active FROM branches WHERE id = $1", [newBranchIdNum]);
+    // ===== GET NEW BRANCH INFO =====
+    const newBranchResult = await client.query(
+      `SELECT 
+        id,
+        branch_code,
+        branch_name,
+        regional_hub,
+        is_active
+       FROM branches
+       WHERE id = $1`,
+      [newBranchIdNum],
+    );
 
     if (newBranchResult.rows.length === 0) {
       await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.NOT_FOUND, "New branch not found", CONSTANTS.ERROR_CODES.NOT_FOUND);
-    }
-
-    if (!newBranchResult.rows[0].is_active) {
-      await client.query("ROLLBACK");
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Cannot transfer to inactive branch", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Destination branch not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
     }
 
     const newBranch = newBranchResult.rows[0];
 
-    // Record transfer in student_transfers table
+    // Check if destination branch is active
+    if (!newBranch.is_active) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        `Cannot transfer to inactive branch (${newBranch.branch_name})`,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    // ===== CRITICAL: SAME REGIONAL HUB VALIDATION =====
+    if (student.current_regional_hub !== newBranch.regional_hub) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        `Cross-regional student transfer not allowed. ` +
+          `Student is currently in ${student.current_branch_name} (${student.current_regional_hub} region). ` +
+          `Destination ${newBranch.branch_name} is in ${newBranch.regional_hub} region. ` +
+          `Students can only be transferred within the same regional hub.`,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    // ===== PERFORM TRANSFER =====
+
+    // Record transfer in history
     await client.query(
       `INSERT INTO student_transfers 
        (student_id, from_branch_id, to_branch_id, transfer_reason, transferred_by)
        VALUES ($1, $2, $3, $4, $5)`,
-      [studentId, student.branch_id, newBranchIdNum, transferReason ? validators.sanitizeString(transferReason.trim()) : null, req.user?.username || "System"],
+      [
+        studentId,
+        student.branch_id,
+        newBranchIdNum,
+        transferReason
+          ? validators.sanitizeString(transferReason.trim())
+          : null,
+        req.user?.id || null,
+      ],
     );
 
     // Update student's branch
@@ -552,19 +856,41 @@ const transferStudent = async (req, res) => {
 
     await client.query("COMMIT");
 
-    logger.info(`Student transferred: ${student.student_name} from ${student.current_branch_name} to ${newBranch.branch_name}`);
+    logger.info(
+      `Student transferred: ${student.student_name} from ${student.current_branch_name} to ${newBranch.branch_name} (same region: ${student.current_regional_hub})`,
+    );
 
     return sendSuccess(res, "Student transferred successfully", {
-      student: updateResult.rows[0],
+      student: {
+        id: student.id,
+        name: student.student_name,
+        division: student.division,
+      },
       transfer: {
-        from_branch: student.current_branch_name,
-        to_branch: newBranch.branch_name,
-        transfer_reason: transferReason || null,
+        from: {
+          branch_id: student.branch_id,
+          branch_code: student.current_branch_code,
+          branch_name: student.current_branch_name,
+        },
+        to: {
+          branch_id: newBranchIdNum,
+          branch_code: newBranch.branch_code,
+          branch_name: newBranch.branch_name,
+        },
+        regional_hub: student.current_regional_hub,
+        reason: transferReason ? transferReason.trim() : null,
+        transferred_by: req.user?.username || "System",
       },
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to transfer student", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to transfer student",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   } finally {
     client.release();
   }
@@ -616,7 +942,10 @@ const getStudentStats = async (req, res) => {
       ORDER BY b.branch_name
     `;
 
-    const branchStatsResult = await pool.query(branchStatsQuery, branchId ? queryParams : []);
+    const branchStatsResult = await pool.query(
+      branchStatsQuery,
+      branchId ? queryParams : [],
+    );
 
     logger.info("Student statistics generated successfully");
 
@@ -625,7 +954,13 @@ const getStudentStats = async (req, res) => {
       by_branch: branchStatsResult.rows,
     });
   } catch (error) {
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to retrieve student statistics", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve student statistics",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 
@@ -637,13 +972,21 @@ const searchStudents = async (req, res) => {
     const { q: searchQuery, branch_id: branchId, limit = 10 } = req.query;
 
     if (!searchQuery || !searchQuery.trim()) {
-      return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Search query is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Search query is required",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     const searchTerm = `%${searchQuery.trim().toLowerCase()}%`;
     const limitNum = Math.min(parseInt(limit) || 10, 50);
 
-    let whereConditions = ["LOWER(s.student_name) LIKE $1", "s.status = 'active'"];
+    let whereConditions = [
+      "LOWER(s.student_name) LIKE $1",
+      "s.status = 'active'",
+    ];
     let queryParams = [searchTerm];
     let paramCount = 2;
 
@@ -675,14 +1018,22 @@ const searchStudents = async (req, res) => {
 
     const result = await pool.query(query, queryParams);
 
-    logger.debug(`Search students: "${searchQuery}" - found ${result.rows.length} results`);
+    logger.debug(
+      `Search students: "${searchQuery}" - found ${result.rows.length} results`,
+    );
 
     return sendSuccess(res, "Students found", result.rows, {
       count: result.rows.length,
       search_query: searchQuery,
     });
   } catch (error) {
-    return sendError(res, CONSTANTS.HTTP_STATUS.SERVER_ERROR, "Failed to search students", CONSTANTS.ERROR_CODES.SERVER_ERROR, error);
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to search students",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
   }
 };
 

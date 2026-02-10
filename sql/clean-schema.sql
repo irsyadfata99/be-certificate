@@ -1,10 +1,10 @@
 -- =====================================================
--- CERTIFICATE MANAGEMENT DATABASE - FRESH CLEAN SCHEMA
+-- CERTIFICATE MANAGEMENT DATABASE - CLEAN SCHEMA WITH REGIONAL HUB
 -- =====================================================
 -- PostgreSQL Database Schema
--- Version: 4.1 (Complete with Correct Age Ranges)
+-- Version: 5.0 (With Regional Hub Support Built-in)
 -- Created: February 2026
--- Updated: February 2026 - Fixed Division Age Ranges
+-- Updated: February 2026 - Added Regional Hub Support
 -- =====================================================
 -- DIVISION AGE RANGES:
 -- JK (Junior Koder): 8-16 tahun
@@ -14,6 +14,13 @@
 --   - Level 1: 4-6 tahun
 --   - Level 2: 6-8 tahun
 -- =====================================================
+-- REGIONAL HUB FEATURE:
+-- - Multiple head branches (is_head_branch = true)
+-- - Each head branch manages its own region
+-- - Regular branches belong to one regional hub
+-- - Stock can only be migrated within same regional hub
+-- - Students can only transfer within same regional hub
+-- =====================================================
 -- DROP AND RECREATE DATABASE
 -- =====================================================
 
@@ -22,7 +29,7 @@
 -- 2. Run: DROP DATABASE IF EXISTS certificate_db;
 -- 3. Run: CREATE DATABASE certificate_db;
 -- 4. Run: \c certificate_db
--- 5. Run: \i clean-schema-fixed.sql
+-- 5. Run: \i clean-schema-with-regional-hub.sql
 
 -- =====================================================
 -- CLEAN START - DROP ALL TABLES
@@ -52,6 +59,7 @@ DROP VIEW IF EXISTS v_teachers_by_branch CASCADE;
 DROP VIEW IF EXISTS v_module_stats CASCADE;
 DROP VIEW IF EXISTS v_student_stats CASCADE;
 DROP VIEW IF EXISTS v_active_students CASCADE;
+DROP VIEW IF EXISTS v_regional_hub_summary CASCADE;
 
 -- Drop functions
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
@@ -59,6 +67,8 @@ DROP FUNCTION IF EXISTS auto_create_student_module() CASCADE;
 DROP FUNCTION IF EXISTS get_certificate_stock(VARCHAR, VARCHAR) CASCADE;
 DROP FUNCTION IF EXISTS add_certificate_stock(VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS migrate_certificate_stock(VARCHAR, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS get_regional_hub_info(VARCHAR) CASCADE;
+DROP FUNCTION IF EXISTS validate_same_regional_hub(VARCHAR, VARCHAR) CASCADE;
 
 -- =====================================================
 -- 1. SCHEMA MIGRATIONS TABLE
@@ -72,12 +82,14 @@ CREATE TABLE schema_migrations (
 );
 
 -- =====================================================
--- 2. BRANCHES TABLE (Dynamic Branches)
+-- 2. BRANCHES TABLE (WITH REGIONAL HUB SUPPORT)
 -- =====================================================
 CREATE TABLE branches (
     id SERIAL PRIMARY KEY,
     branch_code VARCHAR(10) UNIQUE NOT NULL,
     branch_name VARCHAR(100) NOT NULL,
+    is_head_branch BOOLEAN DEFAULT false,
+    regional_hub VARCHAR(10),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -86,12 +98,30 @@ CREATE TABLE branches (
 -- Indexes
 CREATE INDEX idx_branches_code ON branches(branch_code);
 CREATE INDEX idx_branches_active ON branches(is_active);
+CREATE INDEX idx_branches_regional_hub ON branches(regional_hub);
+CREATE INDEX idx_branches_is_head ON branches(is_head_branch);
+CREATE INDEX idx_branches_hub_active ON branches(regional_hub, is_active);
+
+-- Constraints
+ALTER TABLE branches 
+ADD CONSTRAINT check_head_branch_self_reference 
+CHECK (
+  (is_head_branch = true AND regional_hub = branch_code) OR 
+  (is_head_branch = false AND regional_hub IS NOT NULL)
+);
+
+ALTER TABLE branches
+ADD CONSTRAINT fk_branches_regional_hub
+FOREIGN KEY (regional_hub) 
+REFERENCES branches(branch_code)
+ON DELETE RESTRICT
+ON UPDATE CASCADE;
 
 -- Insert branches
-INSERT INTO branches (branch_code, branch_name, is_active) VALUES
-('SND', 'Sunda', true),
-('MKW', 'Mekarwangi', true),
-('KBP', 'Kota Baru Parahyangan', true);
+INSERT INTO branches (branch_code, branch_name, is_head_branch, regional_hub, is_active) VALUES
+('SND', 'Sunda', true, 'SND', true),
+('MKW', 'Mekarwangi', false, 'SND', true),
+('KBP', 'Kota Baru Parahyangan', false, 'SND', true);
 
 -- =====================================================
 -- 3. USERS TABLE (ADMIN & TEACHER)
@@ -293,13 +323,6 @@ CREATE INDEX idx_modules_division ON modules(division);
 CREATE INDEX idx_modules_age_range ON modules(min_age, max_age);
 
 -- Insert modules with correct age ranges
--- JK (Junior Koder): Overall 8-16 tahun
---   Level 1: 8-12 tahun
---   Level 2: 12-16 tahun
--- LK (Little Koder): Overall 4-8 tahun
---   Level 1: 4-6 tahun
---   Level 2: 6-8 tahun
-
 INSERT INTO modules (module_code, module_name, division, min_age, max_age) VALUES
 ('JK-001', 'Scratch Programming untuk Junior Koder (Level 1)', 'JK', 8, 12),
 ('JK-002', 'Advanced Scratch & Game Design untuk Junior Koder (Level 2)', 'JK', 12, 16),
@@ -627,6 +650,54 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Get regional hub info for a branch
+CREATE OR REPLACE FUNCTION get_regional_hub_info(p_branch_code VARCHAR(10))
+RETURNS TABLE (
+  branch_code VARCHAR(10),
+  branch_name VARCHAR(100),
+  is_head_branch BOOLEAN,
+  regional_hub VARCHAR(10),
+  hub_name VARCHAR(100)
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    b.branch_code,
+    b.branch_name,
+    b.is_head_branch,
+    b.regional_hub,
+    h.branch_name as hub_name
+  FROM branches b
+  LEFT JOIN branches h ON b.regional_hub = h.branch_code
+  WHERE b.branch_code = p_branch_code;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Validate if two branches are in the same regional hub
+CREATE OR REPLACE FUNCTION validate_same_regional_hub(
+  p_source_branch VARCHAR(10),
+  p_destination_branch VARCHAR(10)
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_source_hub VARCHAR(10);
+  v_dest_hub VARCHAR(10);
+BEGIN
+  -- Get source regional hub
+  SELECT regional_hub INTO v_source_hub
+  FROM branches
+  WHERE branch_code = p_source_branch;
+  
+  -- Get destination regional hub
+  SELECT regional_hub INTO v_dest_hub
+  FROM branches
+  WHERE branch_code = p_destination_branch;
+  
+  -- Return true if same hub, false otherwise
+  RETURN v_source_hub = v_dest_hub;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- 17. VIEWS
 -- =====================================================
@@ -702,16 +773,19 @@ WHERE u.role = 'teacher'
 GROUP BY u.id, u.username, u.teacher_name, u.created_at, u.updated_at
 ORDER BY u.created_at DESC;
 
--- Teachers by Branch View
+-- Teachers by Branch View (WITH REGIONAL HUB INFO)
 CREATE OR REPLACE VIEW v_teachers_by_branch AS
 SELECT 
-    b.branch_code,
-    b.branch_name,
-    COUNT(DISTINCT tb.teacher_id) as teacher_count
+  b.branch_code,
+  b.branch_name,
+  b.is_head_branch,
+  b.regional_hub,
+  b.is_active,
+  COUNT(DISTINCT tb.teacher_id) as teacher_count
 FROM branches b
 LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
-GROUP BY b.branch_code, b.branch_name
-ORDER BY b.branch_code;
+GROUP BY b.branch_code, b.branch_name, b.is_head_branch, b.regional_hub, b.is_active
+ORDER BY b.is_head_branch DESC, b.regional_hub, b.branch_code;
 
 -- Module Statistics View
 CREATE OR REPLACE VIEW v_module_stats AS
@@ -723,19 +797,21 @@ SELECT
 FROM modules
 GROUP BY division;
 
--- Student Statistics View
+-- Student Statistics View (WITH REGIONAL HUB INFO)
 CREATE OR REPLACE VIEW v_student_stats AS
 SELECT 
-    b.branch_code,
-    b.branch_name,
-    COUNT(*) FILTER (WHERE s.status = 'active') as active_students,
-    COUNT(*) FILTER (WHERE s.status = 'inactive') as inactive_students,
-    COUNT(*) FILTER (WHERE s.status = 'transferred') as transferred_students,
-    COUNT(*) as total_students
+  b.branch_code,
+  b.branch_name,
+  b.is_head_branch,
+  b.regional_hub,
+  COUNT(*) FILTER (WHERE s.status = 'active') as active_students,
+  COUNT(*) FILTER (WHERE s.status = 'inactive') as inactive_students,
+  COUNT(*) FILTER (WHERE s.status = 'transferred') as transferred_students,
+  COUNT(*) as total_students
 FROM branches b
 LEFT JOIN students s ON b.id = s.branch_id
-GROUP BY b.branch_code, b.branch_name
-ORDER BY b.branch_code;
+GROUP BY b.branch_code, b.branch_name, b.is_head_branch, b.regional_hub
+ORDER BY b.is_head_branch DESC, b.regional_hub, b.branch_code;
 
 -- Active Students View
 CREATE OR REPLACE VIEW v_active_students AS
@@ -754,13 +830,31 @@ WHERE s.status = 'active'
 GROUP BY s.id, s.student_name, b.branch_code, b.branch_name, s.division
 ORDER BY s.student_name;
 
+-- Regional Hub Summary View (NEW)
+CREATE OR REPLACE VIEW v_regional_hub_summary AS
+SELECT 
+  b.regional_hub,
+  MAX(CASE WHEN b.is_head_branch THEN b.branch_name END) as hub_name,
+  COUNT(DISTINCT b.id) as total_branches,
+  COUNT(DISTINCT CASE WHEN b.is_active THEN b.id END) as active_branches,
+  COUNT(DISTINCT s.id) FILTER (WHERE s.status = 'active') as total_students,
+  COUNT(DISTINCT tb.teacher_id) as total_teachers,
+  COALESCE(SUM(cs.jumlah_sertifikat), 0) as total_stock
+FROM branches b
+LEFT JOIN students s ON b.id = s.branch_id
+LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
+LEFT JOIN certificate_stock cs ON b.branch_code = cs.branch_code
+GROUP BY b.regional_hub
+ORDER BY b.regional_hub;
+
 -- =====================================================
--- 18. RECORD INITIAL MIGRATION
+-- 18. RECORD MIGRATIONS
 -- =====================================================
 INSERT INTO schema_migrations (migration_id, description) VALUES
 ('001_initial_schema', 'Fresh database schema with all features enabled'),
 ('002_dynamic_branches', 'Dynamic branch support with certificate_stock table'),
-('003_correct_age_ranges', 'Fixed division age ranges: JK(8-16), LK(4-8)');
+('003_correct_age_ranges', 'Fixed division age ranges: JK(8-16), LK(4-8)'),
+('004_add_regional_hub_support', 'Add multi-regional hub support: is_head_branch and regional_hub columns');
 
 -- =====================================================
 -- 19. VERIFICATION & SUMMARY
@@ -786,10 +880,10 @@ BEGIN
     RAISE NOTICE '  * Level 1: 4-6 tahun';
     RAISE NOTICE '  * Level 2: 6-8 tahun';
     RAISE NOTICE '';
-    RAISE NOTICE 'BRANCHES:';
-    RAISE NOTICE '- SND (Sunda)';
-    RAISE NOTICE '- MKW (Mekarwangi)';
-    RAISE NOTICE '- KBP (Kota Baru Parahyangan)';
+    RAISE NOTICE 'REGIONAL HUB SUPPORT:';
+    RAISE NOTICE '- SND (Sunda) - HEAD BRANCH';
+    RAISE NOTICE '- MKW (Mekarwangi) - under SND region';
+    RAISE NOTICE '- KBP (Kota Baru Parahyangan) - under SND region';
     RAISE NOTICE '';
     RAISE NOTICE 'DUMMY DATA:';
     RAISE NOTICE '- 1 Admin user';
@@ -807,9 +901,24 @@ END $$;
 SELECT '=== USERS ===' as info;
 SELECT id, username, role, teacher_name, teacher_division, teacher_branch FROM users ORDER BY role, username;
 
--- Show branches
-SELECT '=== BRANCHES ===' as info;
-SELECT id, branch_code, branch_name, is_active FROM branches ORDER BY branch_code;
+-- Show branches with regional hub info
+SELECT '=== BRANCHES WITH REGIONAL HUB ===' as info;
+SELECT 
+  branch_code,
+  branch_name,
+  is_head_branch,
+  regional_hub,
+  is_active,
+  CASE 
+    WHEN is_head_branch THEN '🏢 HEAD BRANCH'
+    ELSE '📍 Regular Branch'
+  END as branch_type
+FROM branches
+ORDER BY is_head_branch DESC, regional_hub, branch_code;
+
+-- Show regional hub summary
+SELECT '=== REGIONAL HUB SUMMARY ===' as info;
+SELECT * FROM v_regional_hub_summary;
 
 -- Show modules with age range verification
 SELECT '=== MODULES WITH AGE RANGES ===' as info;

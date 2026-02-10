@@ -1,4 +1,6 @@
-// controllers/CertificateController.js - FIXED VERSION
+// controllers/CertificateController.js - WITH REGIONAL HUB SUPPORT
+// Version 2.0 - Only head branches can input stock, migration within same regional hub only
+
 const pool = require("../config/database");
 const { logAction } = require("./CertificateLogsController");
 const logger = require("../utils/logger");
@@ -7,7 +9,7 @@ const validators = require("../utils/validators");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
 
 // =====================================================
-// 1. CREATE NEW CERTIFICATE
+// 1. CREATE NEW CERTIFICATE - HEAD BRANCH ONLY
 // =====================================================
 const createCertificate = async (req, res) => {
   const client = await pool.connect();
@@ -20,13 +22,67 @@ const createCertificate = async (req, res) => {
 
     const { certificate_id, jumlah_sertifikat, jumlah_medali } = req.body;
 
+    // Get user's branch from JWT token
+    const userBranch = req.user.teacher_branch || "SND"; // Fallback to SND for admin
+
     logger.info("Create certificate request:", {
       certificate_id,
       jumlah_sertifikat,
       jumlah_medali,
+      userBranch,
+      userRole: req.user.role,
     });
 
-    // Validation
+    // ===== CRITICAL: VALIDATE HEAD BRANCH (for teachers only) =====
+    if (req.user.role === "teacher") {
+      const branchCheck = await client.query(
+        `SELECT 
+          branch_code, 
+          branch_name, 
+          is_head_branch, 
+          regional_hub,
+          is_active 
+         FROM branches 
+         WHERE branch_code = $1`,
+        [userBranch],
+      );
+
+      if (branchCheck.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.NOT_FOUND,
+          "Your branch information not found",
+          CONSTANTS.ERROR_CODES.NOT_FOUND,
+        );
+      }
+
+      const branchInfo = branchCheck.rows[0];
+
+      // CRITICAL: Only head branches can input stock
+      if (!branchInfo.is_head_branch) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.FORBIDDEN,
+          `Only head branches can input new stock. Your branch (${userBranch}) is under ${branchInfo.regional_hub} regional hub. Please contact ${branchInfo.regional_hub} admin to input stock.`,
+          CONSTANTS.ERROR_CODES.FORBIDDEN,
+        );
+      }
+
+      // Check if branch is active
+      if (!branchInfo.is_active) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          "Cannot input stock to inactive branch",
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
+    }
+
+    // ===== VALIDATION =====
     if (!certificate_id || !certificate_id.trim()) {
       await client.query("ROLLBACK");
       return sendError(
@@ -99,13 +155,25 @@ const createCertificate = async (req, res) => {
       [cleanId],
     );
 
-    // 2. Insert into certificate_stock (SND only - central branch)
+    // 2. Insert into certificate_stock (to user's branch - head branch)
+    const destinationBranch = userBranch;
+
     await client.query(
       `INSERT INTO certificate_stock 
        (certificate_id, branch_code, jumlah_sertifikat, jumlah_medali, medali_awal)
-       VALUES ($1, 'SND', $2, $3, $3)`,
-      [cleanId, certAmount, medalAmount],
+       VALUES ($1, $2, $3, $4, $4)`,
+      [cleanId, destinationBranch, certAmount, medalAmount],
     );
+
+    // Get branch info for response
+    const branchInfoResult = await client.query(
+      "SELECT branch_name, regional_hub FROM branches WHERE branch_code = $1",
+      [destinationBranch],
+    );
+    const branchName =
+      branchInfoResult.rows[0]?.branch_name || destinationBranch;
+    const regionalHub =
+      branchInfoResult.rows[0]?.regional_hub || destinationBranch;
 
     // 3. Log the action
     await client.query(
@@ -116,13 +184,14 @@ const createCertificate = async (req, res) => {
       [
         cleanId,
         CONSTANTS.LOG_ACTION_TYPES.CREATE,
-        `Created certificate batch for SND: ${certAmount} certificates, ${medalAmount} medals`,
+        `Created certificate batch for ${destinationBranch}: ${certAmount} certificates, ${medalAmount} medals`,
         certAmount,
         medalAmount,
         JSON.stringify({
-          branch: "SND",
+          branch: destinationBranch,
           certificates: certAmount,
           medals: medalAmount,
+          regional_hub: regionalHub,
         }),
         req.user?.username || "System",
       ],
@@ -130,12 +199,23 @@ const createCertificate = async (req, res) => {
 
     await client.query("COMMIT");
 
-    logger.info(`Certificate batch created successfully: ${cleanId}`);
+    logger.info(
+      `Certificate batch created successfully: ${cleanId} at ${destinationBranch}`,
+    );
 
     return sendSuccess(
       res,
-      "Certificate batch created successfully",
-      certResult.rows[0],
+      `Certificate batch created successfully at ${branchName}`,
+      {
+        certificate: certResult.rows[0],
+        stock: {
+          branch_code: destinationBranch,
+          branch_name: branchName,
+          certificates: certAmount,
+          medals: medalAmount,
+        },
+        message: `Stock has been added to ${branchName}. You can now migrate to other branches in your ${regionalHub} region.`,
+      },
     );
   } catch (error) {
     await client.query("ROLLBACK");
@@ -165,7 +245,7 @@ const createCertificate = async (req, res) => {
 };
 
 // =====================================================
-// 2. GET ALL CERTIFICATES (SERVER-SIDE PAGINATION) - FIXED
+// 2. GET ALL CERTIFICATES (SERVER-SIDE PAGINATION)
 // =====================================================
 const getAllCertificates = async (req, res) => {
   try {
@@ -459,7 +539,7 @@ const clearAllCertificates = async (req, res) => {
 };
 
 // =====================================================
-// 5. MIGRATE CERTIFICATE - FIXED
+// 5. MIGRATE CERTIFICATE - SAME REGIONAL HUB ONLY
 // =====================================================
 const migrateCertificate = async (req, res) => {
   const client = await pool.connect();
@@ -477,14 +557,55 @@ const migrateCertificate = async (req, res) => {
       medal_amount,
     } = req.body;
 
+    // Get user's branch from JWT token
+    const sourceBranch = req.user.teacher_branch || "SND"; // Fallback to SND for admin
+
     logger.info("Migrate certificate request:", {
       certificate_id,
+      sourceBranch,
       destination_branch,
       certificate_amount,
       medal_amount,
+      userRole: req.user.role,
     });
 
-    // Validation
+    // ===== GET SOURCE BRANCH INFO =====
+    const sourceInfo = await client.query(
+      `SELECT 
+        branch_code, 
+        branch_name, 
+        is_head_branch, 
+        regional_hub,
+        is_active 
+       FROM branches 
+       WHERE branch_code = $1`,
+      [sourceBranch],
+    );
+
+    if (sourceInfo.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        "Your branch information not found",
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
+      );
+    }
+
+    const source = sourceInfo.rows[0];
+
+    // CRITICAL: Only head branches can migrate stock (for teachers)
+    if (req.user.role === "teacher" && !source.is_head_branch) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.FORBIDDEN,
+        `Only head branches can migrate stock. Your branch (${sourceBranch}) is under ${source.regional_hub} regional hub. Please contact ${source.regional_hub} admin to migrate stock.`,
+        CONSTANTS.ERROR_CODES.FORBIDDEN,
+      );
+    }
+
+    // ===== VALIDATION =====
     if (!certificate_id || !certificate_id.trim()) {
       await client.query("ROLLBACK");
       return sendError(
@@ -550,82 +671,119 @@ const migrateCertificate = async (req, res) => {
       );
     }
 
-    // Check if destination branch exists
-    const branchCheck = await client.query(
-      "SELECT branch_code, branch_name FROM branches WHERE branch_code = $1 AND is_active = true",
+    // ===== GET DESTINATION BRANCH INFO =====
+    const destInfo = await client.query(
+      `SELECT 
+        branch_code, 
+        branch_name, 
+        is_head_branch, 
+        regional_hub,
+        is_active 
+       FROM branches 
+       WHERE branch_code = $1`,
       [cleanDestination],
     );
 
-    if (branchCheck.rows.length === 0) {
+    if (destInfo.rows.length === 0) {
       await client.query("ROLLBACK");
       return sendError(
         res,
         CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "Destination branch not found or inactive",
+        "Destination branch not found",
         CONSTANTS.ERROR_CODES.NOT_FOUND,
       );
     }
 
-    // Cannot migrate to SND (central branch)
-    if (cleanDestination === "SND") {
+    const destination = destInfo.rows[0];
+
+    // Check if destination is active
+    if (!destination.is_active) {
       await client.query("ROLLBACK");
       return sendError(
         res,
         CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Cannot migrate to central branch (SND). Use this only for migrating FROM SND to other branches.",
+        `Cannot migrate to inactive branch (${cleanDestination})`,
         CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
 
-    // Check SND stock availability
-    const sndStockCheck = await client.query(
-      "SELECT jumlah_sertifikat, jumlah_medali FROM certificate_stock WHERE certificate_id = $1 AND branch_code = 'SND'",
-      [cleanId],
+    // ===== CRITICAL: SAME REGIONAL HUB VALIDATION =====
+    if (source.regional_hub !== destination.regional_hub) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        `Cross-regional migration not allowed. ` +
+          `Source branch (${sourceBranch}) is in ${source.regional_hub} region, ` +
+          `destination branch (${cleanDestination}) is in ${destination.regional_hub} region. ` +
+          `You can only migrate stock within your ${source.regional_hub} region.`,
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    // Prevent migration to self
+    if (sourceBranch === cleanDestination) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Cannot migrate to the same branch",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    // ===== CHECK STOCK AVAILABILITY =====
+    const stockCheck = await client.query(
+      `SELECT jumlah_sertifikat, jumlah_medali 
+       FROM certificate_stock 
+       WHERE certificate_id = $1 AND branch_code = $2`,
+      [cleanId, sourceBranch],
     );
 
-    if (sndStockCheck.rows.length === 0) {
+    if (stockCheck.rows.length === 0) {
       await client.query("ROLLBACK");
       return sendError(
         res,
         CONSTANTS.HTTP_STATUS.NOT_FOUND,
-        "No stock available at central branch (SND) for this certificate batch",
+        `No stock found for certificate ${cleanId} in your branch (${sourceBranch})`,
         CONSTANTS.ERROR_CODES.NOT_FOUND,
       );
     }
 
-    const sndStock = sndStockCheck.rows[0];
-    const availableCerts = parseInt(sndStock.jumlah_sertifikat) || 0;
-    const availableMedals = parseInt(sndStock.jumlah_medali) || 0;
+    const availableCert = parseInt(stockCheck.rows[0].jumlah_sertifikat) || 0;
+    const availableMedal = parseInt(stockCheck.rows[0].jumlah_medali) || 0;
 
     // Validate sufficient stock
-    if (certAmount > availableCerts) {
+    if (certAmount > availableCert) {
       await client.query("ROLLBACK");
       return sendError(
         res,
         CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Insufficient certificates at SND. Available: ${availableCerts}, Requested: ${certAmount}`,
+        `Insufficient certificates. Available: ${availableCert}, Requested: ${certAmount}`,
         CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
 
-    if (medalAmount > availableMedals) {
+    if (medalAmount > availableMedal) {
       await client.query("ROLLBACK");
       return sendError(
         res,
         CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        `Insufficient medals at SND. Available: ${availableMedals}, Requested: ${medalAmount}`,
+        `Insufficient medals. Available: ${availableMedal}, Requested: ${medalAmount}`,
         CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
 
-    // Deduct from SND
+    // ===== PERFORM MIGRATION =====
+
+    // Deduct from source
     await client.query(
       `UPDATE certificate_stock 
        SET jumlah_sertifikat = jumlah_sertifikat - $1,
            jumlah_medali = jumlah_medali - $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE certificate_id = $3 AND branch_code = 'SND'`,
-      [certAmount, medalAmount, cleanId],
+       WHERE certificate_id = $3 AND branch_code = $4`,
+      [certAmount, medalAmount, cleanId, sourceBranch],
     );
 
     // Add to destination (INSERT or UPDATE)
@@ -641,20 +799,32 @@ const migrateCertificate = async (req, res) => {
       [cleanId, cleanDestination, certAmount, medalAmount],
     );
 
-    // Log the migration
+    // ===== LOG THE MIGRATION =====
     await client.query(
       `INSERT INTO certificate_logs 
        (certificate_id, action_type, description, from_branch, to_branch,
-        certificate_amount, medal_amount, performed_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        certificate_amount, medal_amount, old_values, new_values, performed_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         cleanId,
         CONSTANTS.LOG_ACTION_TYPES.MIGRATE,
-        `Migrated ${certAmount} certificates and ${medalAmount} medals from SND to ${branchCheck.rows[0].branch_name} (${cleanDestination})`,
-        "SND",
+        `Migrated ${certAmount} certificates and ${medalAmount} medals from ${source.branch_name} to ${destination.branch_name} within ${source.regional_hub} region`,
+        sourceBranch,
         cleanDestination,
         certAmount,
         medalAmount,
+        JSON.stringify({
+          source_stock: { certificates: availableCert, medals: availableMedal },
+          regional_hub: source.regional_hub,
+        }),
+        JSON.stringify({
+          migrated: { certificates: certAmount, medals: medalAmount },
+          remaining: {
+            certificates: availableCert - certAmount,
+            medals: availableMedal - medalAmount,
+          },
+          regional_hub: source.regional_hub,
+        }),
         req.user?.username || "System",
       ],
     );
@@ -662,22 +832,31 @@ const migrateCertificate = async (req, res) => {
     await client.query("COMMIT");
 
     logger.info(
-      `Migration successful: ${cleanId} from SND to ${cleanDestination}`,
+      `Stock migrated successfully: ${cleanId} from ${sourceBranch} to ${cleanDestination} (same region: ${source.regional_hub})`,
     );
 
     return sendSuccess(res, "Stock migrated successfully", {
       certificate_id: cleanId,
-      from_branch: "SND",
-      to_branch: cleanDestination,
-      certificates_migrated: certAmount,
-      medals_migrated: medalAmount,
+      from: {
+        branch_code: sourceBranch,
+        branch_name: source.branch_name,
+        remaining_certificates: availableCert - certAmount,
+        remaining_medals: availableMedal - medalAmount,
+      },
+      to: {
+        branch_code: cleanDestination,
+        branch_name: destination.branch_name,
+        migrated_certificates: certAmount,
+        migrated_medals: medalAmount,
+      },
+      regional_hub: source.regional_hub,
     });
   } catch (error) {
     await client.query("ROLLBACK");
     return sendError(
       res,
       CONSTANTS.HTTP_STATUS.SERVER_ERROR,
-      "Migration failed",
+      "Failed to migrate stock",
       CONSTANTS.ERROR_CODES.SERVER_ERROR,
       error,
     );
@@ -687,7 +866,7 @@ const migrateCertificate = async (req, res) => {
 };
 
 // =====================================================
-// 6. GET STOCK SUMMARY - FIXED FOR DYNAMIC BRANCHES
+// 6. GET STOCK SUMMARY - FOR DYNAMIC BRANCHES
 // =====================================================
 const getStockSummary = async (req, res) => {
   try {

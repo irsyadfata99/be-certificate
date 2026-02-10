@@ -1,6 +1,6 @@
 // controllers/BranchController.js
-// Branch Management Controller - FIXED VERSION
-// Handles branch CRUD operations with dynamic branch support
+// Branch Management Controller - WITH REGIONAL HUB SUPPORT
+// Version 2.0 - Multi-regional hub capability
 
 const pool = require("../config/database");
 const logger = require("../utils/logger");
@@ -9,7 +9,7 @@ const validators = require("../utils/validators");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
 
 // =====================================================
-// 1. GET ALL BRANCHES - FIXED
+// 1. GET ALL BRANCHES - WITH REGIONAL HUB INFO
 // =====================================================
 const getAllBranches = async (req, res) => {
   try {
@@ -22,14 +22,18 @@ const getAllBranches = async (req, res) => {
         b.id,
         b.branch_code,
         b.branch_name,
+        b.is_head_branch,
+        b.regional_hub,
         b.is_active,
         b.created_at,
         b.updated_at,
+        hub.branch_name as hub_name,
         (SELECT COUNT(*) FROM students s WHERE s.branch_id = b.id AND s.status = 'active') as active_students_count,
         (SELECT COUNT(*) FROM teacher_branches tb WHERE tb.branch_id = b.id) as teachers_count,
         (SELECT COALESCE(SUM(cs.jumlah_sertifikat), 0) FROM certificate_stock cs WHERE cs.branch_code = b.branch_code) as total_certificates,
         (SELECT COALESCE(SUM(cs.jumlah_medali), 0) FROM certificate_stock cs WHERE cs.branch_code = b.branch_code) as total_medals
       FROM branches b
+      LEFT JOIN branches hub ON b.regional_hub = hub.branch_code
     `;
 
     // Filter active branches only unless explicitly requested
@@ -37,7 +41,8 @@ const getAllBranches = async (req, res) => {
       query += " WHERE b.is_active = true";
     }
 
-    query += " ORDER BY b.branch_name";
+    // Order by: head branches first, then by regional hub, then by name
+    query += " ORDER BY b.is_head_branch DESC, b.regional_hub, b.branch_name";
 
     const result = await pool.query(query);
 
@@ -61,7 +66,7 @@ const getAllBranches = async (req, res) => {
 };
 
 // =====================================================
-// 2. GET BRANCH BY ID - FIXED
+// 2. GET BRANCH BY ID - WITH REGIONAL HUB INFO
 // =====================================================
 const getBranchById = async (req, res) => {
   try {
@@ -82,9 +87,12 @@ const getBranchById = async (req, res) => {
         b.id,
         b.branch_code,
         b.branch_name,
+        b.is_head_branch,
+        b.regional_hub,
         b.is_active,
         b.created_at,
         b.updated_at,
+        hub.branch_name as hub_name,
         (SELECT COUNT(*) FROM students s WHERE s.branch_id = b.id AND s.status = 'active') as active_students_count,
         (SELECT COUNT(*) FROM students s WHERE s.branch_id = b.id AND s.status = 'inactive') as inactive_students_count,
         (SELECT COUNT(*) FROM teacher_branches tb WHERE tb.branch_id = b.id) as teachers_count,
@@ -100,6 +108,7 @@ const getBranchById = async (req, res) => {
          WHERE tb.branch_id = b.id
         ) as teachers
        FROM branches b
+       LEFT JOIN branches hub ON b.regional_hub = hub.branch_code
        WHERE b.id = $1`,
       [branchId],
     );
@@ -126,7 +135,7 @@ const getBranchById = async (req, res) => {
 };
 
 // =====================================================
-// 3. CREATE BRANCH (ENABLED)
+// 3. CREATE BRANCH - WITH REGIONAL HUB SUPPORT
 // =====================================================
 const createBranch = async (req, res) => {
   const client = await pool.connect();
@@ -137,11 +146,23 @@ const createBranch = async (req, res) => {
       `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
     );
 
-    const { branch_code: branchCode, branch_name: branchName } = req.body;
+    const {
+      branch_code: branchCode,
+      branch_name: branchName,
+      is_head_branch: isHeadBranch = false,
+      regional_hub: regionalHub,
+    } = req.body;
 
-    logger.info("Create branch request:", { branchCode, branchName });
+    logger.info("Create branch request:", {
+      branchCode,
+      branchName,
+      isHeadBranch,
+      regionalHub,
+    });
 
-    // Validation
+    // ===== VALIDATION =====
+
+    // Required fields
     if (!branchCode || !branchName) {
       await client.query("ROLLBACK");
       return sendError(
@@ -168,13 +189,12 @@ const createBranch = async (req, res) => {
       );
     }
 
-    // Branch code should only contain letters and numbers
-    if (!/^[A-Z0-9]+$/.test(cleanCode)) {
+    if (!/^[A-Z0-9_-]+$/.test(cleanCode)) {
       await client.query("ROLLBACK");
       return sendError(
         res,
         CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-        "Branch code can only contain uppercase letters and numbers",
+        "Branch code can only contain uppercase letters, numbers, dashes, and underscores",
         CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
     }
@@ -188,6 +208,68 @@ const createBranch = async (req, res) => {
         "Branch name must be 3-100 characters",
         CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
+    }
+
+    // ===== REGIONAL HUB VALIDATION =====
+
+    // If head branch, regional_hub must be same as branch_code
+    if (isHeadBranch && regionalHub && regionalHub !== cleanCode) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Head branch must have regional_hub equal to its own branch_code",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    // If not head branch, regional_hub is required
+    if (!isHeadBranch && !regionalHub) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Non-head branch must specify a regional_hub",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    // If not head branch, verify regional_hub exists and is a head branch
+    if (!isHeadBranch && regionalHub) {
+      const hubCheck = await client.query(
+        "SELECT branch_code, branch_name, is_head_branch, is_active FROM branches WHERE branch_code = $1",
+        [regionalHub],
+      );
+
+      if (hubCheck.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.NOT_FOUND,
+          `Regional hub '${regionalHub}' not found`,
+          CONSTANTS.ERROR_CODES.NOT_FOUND,
+        );
+      }
+
+      if (!hubCheck.rows[0].is_head_branch) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          `'${regionalHub}' is not a head branch. Only head branches can be regional hubs.`,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
+
+      if (!hubCheck.rows[0].is_active) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          `Regional hub '${regionalHub}' is inactive`,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
     }
 
     // Check if branch code already exists
@@ -222,22 +304,29 @@ const createBranch = async (req, res) => {
       );
     }
 
-    // Insert new branch
+    // ===== INSERT NEW BRANCH =====
+
+    // If head branch, set regional_hub to self
+    const finalRegionalHub = isHeadBranch ? cleanCode : regionalHub;
+
     const result = await client.query(
-      `INSERT INTO branches (branch_code, branch_name, is_active)
-       VALUES ($1, $2, true)
+      `INSERT INTO branches (branch_code, branch_name, is_head_branch, regional_hub, is_active)
+       VALUES ($1, $2, $3, $4, true)
        RETURNING *`,
-      [cleanCode, cleanName],
+      [cleanCode, cleanName, isHeadBranch, finalRegionalHub],
     );
 
     await client.query("COMMIT");
 
-    logger.info(`Branch created successfully: ${cleanCode} - ${cleanName}`);
+    logger.info(
+      `Branch created successfully: ${cleanCode} - ${cleanName} ${isHeadBranch ? "(HEAD BRANCH)" : `(under ${finalRegionalHub})`}`,
+    );
 
     return sendSuccess(res, "Branch created successfully", {
       ...result.rows[0],
-      message:
-        "Branch created. Certificate stock will be automatically created when certificates are added to this branch.",
+      message: isHeadBranch
+        ? "Head branch created. You can now input stock and manage regional operations."
+        : `Branch created under ${finalRegionalHub} regional hub.`,
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -250,6 +339,17 @@ const createBranch = async (req, res) => {
         CONSTANTS.HTTP_STATUS.CONFLICT,
         "Branch code or name already exists",
         CONSTANTS.ERROR_CODES.DUPLICATE_ENTRY,
+        error,
+      );
+    }
+
+    if (error.code === "23503") {
+      // Foreign key violation
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Invalid regional hub specified",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
         error,
       );
     }
@@ -267,7 +367,7 @@ const createBranch = async (req, res) => {
 };
 
 // =====================================================
-// 4. UPDATE BRANCH NAME
+// 4. UPDATE BRANCH NAME (regional_hub tidak bisa diubah)
 // =====================================================
 const updateBranch = async (req, res) => {
   const client = await pool.connect();
@@ -347,7 +447,8 @@ const updateBranch = async (req, res) => {
       );
     }
 
-    // Update branch name (branch_code cannot be changed for safety)
+    // Update branch name only
+    // Note: branch_code, is_head_branch, regional_hub CANNOT be changed
     const result = await client.query(
       `UPDATE branches 
        SET branch_name = $1, updated_at = CURRENT_TIMESTAMP 
@@ -378,7 +479,7 @@ const updateBranch = async (req, res) => {
 };
 
 // =====================================================
-// 5. TOGGLE BRANCH STATUS (ACTIVATE/DEACTIVATE)
+// 5. TOGGLE BRANCH STATUS
 // =====================================================
 const toggleBranchStatus = async (req, res) => {
   const client = await pool.connect();
@@ -403,7 +504,6 @@ const toggleBranchStatus = async (req, res) => {
       );
     }
 
-    // Validation
     if (typeof isActive !== "boolean") {
       await client.query("ROLLBACK");
       return sendError(
@@ -416,7 +516,7 @@ const toggleBranchStatus = async (req, res) => {
 
     // Check if branch exists
     const existingBranch = await client.query(
-      "SELECT id, branch_code, branch_name, is_active FROM branches WHERE id = $1",
+      "SELECT id, branch_code, branch_name, is_active, is_head_branch FROM branches WHERE id = $1",
       [branchId],
     );
 
@@ -441,6 +541,26 @@ const toggleBranchStatus = async (req, res) => {
         `Branch is already ${isActive ? "active" : "inactive"}`,
         CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
       );
+    }
+
+    // CRITICAL: If this is a head branch, check if there are active dependent branches
+    if (!isActive && branch.is_head_branch) {
+      const dependentBranches = await client.query(
+        "SELECT COUNT(*) FROM branches WHERE regional_hub = $1 AND is_active = true AND branch_code != $1",
+        [branch.branch_code],
+      );
+
+      const dependentCount = parseInt(dependentBranches.rows[0].count);
+
+      if (dependentCount > 0) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          `Cannot deactivate head branch. There are ${dependentCount} active branches under this regional hub. Please deactivate or reassign them first.`,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
     }
 
     // If deactivating, check if there are active students
@@ -498,7 +618,7 @@ const toggleBranchStatus = async (req, res) => {
 };
 
 // =====================================================
-// 6. DELETE BRANCH (Soft delete via deactivate)
+// 6. DELETE BRANCH
 // =====================================================
 const deleteBranch = async (req, res) => {
   const client = await pool.connect();
@@ -524,7 +644,7 @@ const deleteBranch = async (req, res) => {
 
     // Check if branch exists
     const existingBranch = await client.query(
-      "SELECT id, branch_code, branch_name, is_active FROM branches WHERE id = $1",
+      "SELECT id, branch_code, branch_name, is_active, is_head_branch FROM branches WHERE id = $1",
       [branchId],
     );
 
@@ -539,6 +659,26 @@ const deleteBranch = async (req, res) => {
     }
 
     const branch = existingBranch.rows[0];
+
+    // CRITICAL: If this is a head branch, check dependencies
+    if (branch.is_head_branch) {
+      const dependentBranches = await client.query(
+        "SELECT COUNT(*) FROM branches WHERE regional_hub = $1 AND branch_code != $1",
+        [branch.branch_code],
+      );
+
+      const dependentCount = parseInt(dependentBranches.rows[0].count);
+
+      if (dependentCount > 0) {
+        await client.query("ROLLBACK");
+        return sendError(
+          res,
+          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+          `Cannot delete head branch. There are ${dependentCount} branches under this regional hub. Please delete or reassign them first.`,
+          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
+    }
 
     // Check for students
     const studentsCheck = await client.query(
@@ -606,6 +746,18 @@ const deleteBranch = async (req, res) => {
     return sendSuccess(res, "Branch deleted successfully");
   } catch (error) {
     await client.query("ROLLBACK");
+
+    // Handle foreign key constraint violation
+    if (error.code === "23503") {
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Cannot delete branch. It is referenced by other records.",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+        error,
+      );
+    }
+
     return sendError(
       res,
       CONSTANTS.HTTP_STATUS.SERVER_ERROR,
@@ -619,7 +771,7 @@ const deleteBranch = async (req, res) => {
 };
 
 // =====================================================
-// 7. GET BRANCH STATISTICS - FIXED
+// 7. GET BRANCH STATISTICS - WITH REGIONAL HUB BREAKDOWN
 // =====================================================
 const getBranchStats = async (req, res) => {
   try {
@@ -628,12 +780,13 @@ const getBranchStats = async (req, res) => {
       SELECT 
         COUNT(*) as total_branches,
         COUNT(CASE WHEN is_active = true THEN 1 END) as active_branches,
-        COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_branches
+        COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_branches,
+        COUNT(CASE WHEN is_head_branch = true THEN 1 END) as total_head_branches
       FROM branches
     `;
     const overallResult = await pool.query(overallQuery);
 
-    // ADDED: Total students across all branches
+    // Total students across all branches
     const totalStudentsQuery = `
       SELECT COUNT(*) as total_students
       FROM students
@@ -641,14 +794,14 @@ const getBranchStats = async (req, res) => {
     `;
     const totalStudentsResult = await pool.query(totalStudentsQuery);
 
-    // ADDED: Total teachers across all branches
+    // Total teachers across all branches
     const totalTeachersQuery = `
       SELECT COUNT(DISTINCT teacher_id) as total_teachers
       FROM teacher_branches
     `;
     const totalTeachersResult = await pool.query(totalTeachersQuery);
 
-    // ADDED: Total stock across all branches
+    // Total stock across all branches
     const totalStockQuery = `
       SELECT 
         COALESCE(SUM(jumlah_sertifikat), 0) as total_certificates,
@@ -663,6 +816,8 @@ const getBranchStats = async (req, res) => {
         b.id as branch_id,
         b.branch_code,
         b.branch_name,
+        b.is_head_branch,
+        b.regional_hub,
         b.is_active,
         COUNT(DISTINCT CASE WHEN s.status = 'active' THEN s.id END)::INTEGER as students,
         COUNT(DISTINCT tb.teacher_id)::INTEGER as teachers,
@@ -671,32 +826,139 @@ const getBranchStats = async (req, res) => {
       LEFT JOIN students s ON b.id = s.branch_id
       LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
       LEFT JOIN certificate_stock cs ON b.branch_code = cs.branch_code
-      GROUP BY b.id, b.branch_code, b.branch_name, b.is_active
-      ORDER BY b.branch_name
+      GROUP BY b.id, b.branch_code, b.branch_name, b.is_head_branch, b.regional_hub, b.is_active
+      ORDER BY b.is_head_branch DESC, b.regional_hub, b.branch_name
     `;
     const branchStatsResult = await pool.query(branchStatsQuery);
+
+    // Regional hub summary
+    const regionalHubQuery = `
+      SELECT 
+        b.regional_hub,
+        MAX(CASE WHEN b.is_head_branch THEN b.branch_name END) as hub_name,
+        COUNT(DISTINCT b.id) as total_branches,
+        COUNT(DISTINCT CASE WHEN b.is_active THEN b.id END) as active_branches,
+        COUNT(DISTINCT s.id) FILTER (WHERE s.status = 'active') as total_students,
+        COUNT(DISTINCT tb.teacher_id) as total_teachers,
+        COALESCE(SUM(cs.jumlah_sertifikat), 0)::INTEGER as total_stock
+      FROM branches b
+      LEFT JOIN students s ON b.id = s.branch_id
+      LEFT JOIN teacher_branches tb ON b.id = tb.branch_id
+      LEFT JOIN certificate_stock cs ON b.branch_code = cs.branch_code
+      GROUP BY b.regional_hub
+      ORDER BY b.regional_hub
+    `;
+    const regionalHubResult = await pool.query(regionalHubQuery);
 
     logger.info("Branch statistics generated successfully");
 
     return sendSuccess(res, "Branch statistics retrieved successfully", {
-      // Overall stats
+      // Overall totals
       total_students: parseInt(totalStudentsResult.rows[0].total_students) || 0,
       total_teachers: parseInt(totalTeachersResult.rows[0].total_teachers) || 0,
       total_stock: parseInt(totalStockResult.rows[0].total_certificates) || 0,
 
-      // Branch breakdown
+      // Branch counts
       total_branches: parseInt(overallResult.rows[0].total_branches) || 0,
       active_branches: parseInt(overallResult.rows[0].active_branches) || 0,
       inactive_branches: parseInt(overallResult.rows[0].inactive_branches) || 0,
+      total_head_branches:
+        parseInt(overallResult.rows[0].total_head_branches) || 0,
 
       // Per-branch details
       branches: branchStatsResult.rows,
+
+      // Regional hub summary
+      regional_hubs: regionalHubResult.rows,
     });
   } catch (error) {
     return sendError(
       res,
       CONSTANTS.HTTP_STATUS.SERVER_ERROR,
       "Failed to retrieve branch statistics",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
+  }
+};
+
+// =====================================================
+// 8. GET HEAD BRANCHES ONLY (for dropdown in forms)
+// =====================================================
+const getHeadBranches = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        id,
+        branch_code,
+        branch_name,
+        is_active,
+        created_at
+      FROM branches
+      WHERE is_head_branch = true AND is_active = true
+      ORDER BY branch_name`,
+    );
+
+    logger.info(`Retrieved ${result.rows.length} head branches`);
+
+    return sendSuccess(
+      res,
+      "Head branches retrieved successfully",
+      result.rows,
+    );
+  } catch (error) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve head branches",
+      CONSTANTS.ERROR_CODES.SERVER_ERROR,
+      error,
+    );
+  }
+};
+
+// =====================================================
+// 9. GET BRANCHES BY REGIONAL HUB (for filtering)
+// =====================================================
+const getBranchesByHub = async (req, res) => {
+  try {
+    const { hub } = req.params;
+
+    if (!hub) {
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Regional hub parameter is required",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
+    }
+
+    const result = await pool.query(
+      `SELECT 
+        id,
+        branch_code,
+        branch_name,
+        is_head_branch,
+        regional_hub,
+        is_active
+      FROM branches
+      WHERE regional_hub = $1 AND is_active = true
+      ORDER BY is_head_branch DESC, branch_name`,
+      [hub],
+    );
+
+    logger.info(`Retrieved ${result.rows.length} branches for hub ${hub}`);
+
+    return sendSuccess(
+      res,
+      `Branches for regional hub ${hub} retrieved successfully`,
+      result.rows,
+    );
+  } catch (error) {
+    return sendError(
+      res,
+      CONSTANTS.HTTP_STATUS.SERVER_ERROR,
+      "Failed to retrieve branches by hub",
       CONSTANTS.ERROR_CODES.SERVER_ERROR,
       error,
     );
@@ -711,4 +973,6 @@ module.exports = {
   toggleBranchStatus,
   deleteBranch,
   getBranchStats,
+  getHeadBranches,
+  getBranchesByHub,
 };
