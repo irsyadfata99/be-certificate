@@ -1,4 +1,4 @@
-// Certificate Logs Controller - WITH REGIONAL HUB FILTER (IMPROVED)
+// Certificate Logs Controller - IMPROVED WITH QUERY BUILDER
 
 const pool = require("../config/database");
 const fs = require("fs").promises;
@@ -6,6 +6,106 @@ const path = require("path");
 const logger = require("../utils/logger");
 const CONSTANTS = require("../utils/constants");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
+
+// =====================================================
+// QUERY BUILDER HELPER - ELIMINATES DUPLICATION
+// =====================================================
+class LogsQueryBuilder {
+  constructor() {
+    this.whereClauses = [];
+    this.params = [];
+    this.paramCount = 1;
+  }
+
+  addCertificateIdFilter(certificateId) {
+    if (certificateId && certificateId.trim()) {
+      this.whereClauses.push(`cl.certificate_id = $${this.paramCount}`);
+      this.params.push(certificateId.trim());
+      this.paramCount++;
+    }
+    return this;
+  }
+
+  addActionTypeFilter(actionType) {
+    if (actionType && actionType.trim()) {
+      this.whereClauses.push(`cl.action_type = $${this.paramCount}`);
+      this.params.push(actionType.trim().toUpperCase());
+      this.paramCount++;
+    }
+    return this;
+  }
+
+  addDateRangeFilter(fromDate, toDate) {
+    if (fromDate && fromDate.trim()) {
+      this.whereClauses.push(`cl.created_at >= $${this.paramCount}`);
+      this.params.push(fromDate.trim());
+      this.paramCount++;
+    }
+
+    if (toDate && toDate.trim()) {
+      this.whereClauses.push(`cl.created_at < $${this.paramCount}::date + interval '1 day'`);
+      this.params.push(toDate.trim());
+      this.paramCount++;
+    }
+    return this;
+  }
+
+  addSearchFilter(search) {
+    if (search && search.trim()) {
+      this.whereClauses.push(`(cl.certificate_id ILIKE $${this.paramCount} OR cl.description ILIKE $${this.paramCount})`);
+      this.params.push(`%${search.trim()}%`);
+      this.paramCount++;
+    }
+    return this;
+  }
+
+  addRegionalHubFilter(regionalHub) {
+    if (regionalHub && regionalHub.trim()) {
+      this.whereClauses.push(`EXISTS (
+        SELECT 1 FROM certificate_stock cs
+        JOIN branches b ON cs.branch_code = b.branch_code
+        WHERE cs.certificate_id = cl.certificate_id
+        AND b.regional_hub = $${this.paramCount}
+      )`);
+      this.params.push(regionalHub.trim());
+      this.paramCount++;
+    }
+    return this;
+  }
+
+  getWhereClause() {
+    return this.whereClauses.length > 0 ? `WHERE ${this.whereClauses.join(" AND ")}` : "";
+  }
+
+  getParams() {
+    return this.params;
+  }
+
+  getCurrentParamCount() {
+    return this.paramCount;
+  }
+}
+
+// =====================================================
+// PAGINATION HELPER
+// =====================================================
+function validatePagination(limit, offset) {
+  const validatedLimit = Math.min(Math.max(parseInt(limit) || CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
+  const validatedOffset = Math.max(parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
+
+  return { validatedLimit, validatedOffset };
+}
+
+function buildPaginationResponse(totalCount, limit, offset, currentRows) {
+  return {
+    total: totalCount,
+    limit,
+    offset,
+    hasMore: totalCount > offset + currentRows,
+    currentPage: Math.floor(offset / limit) + 1,
+    totalPages: Math.ceil(totalCount / limit),
+  };
+}
 
 // =====================================================
 // IMPROVED LOG ACTION WITH ASYNC FILE BACKUP
@@ -82,139 +182,46 @@ const getLogs = async (req, res) => {
 
     logger.info("Fetching logs with filters:", req.query);
 
-    // Validate limit and offset
-    const validatedLimit = Math.min(Math.max(parseInt(limit) || CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, 1), CONSTANTS.PAGINATION.MAX_LIMIT);
-    const validatedOffset = Math.max(parseInt(offset) || CONSTANTS.PAGINATION.DEFAULT_OFFSET, 0);
+    // Validate pagination
+    const { validatedLimit, validatedOffset } = validatePagination(limit, offset);
 
-    // IMPROVED: Use same pattern as CertificateController
-    let query = `
-      SELECT 
-        cl.*
+    // Build query using QueryBuilder - NO DUPLICATION!
+    const queryBuilder = new LogsQueryBuilder();
+    queryBuilder.addCertificateIdFilter(certificateId).addActionTypeFilter(actionType).addDateRangeFilter(fromDate, toDate).addSearchFilter(search).addRegionalHubFilter(regionalHub);
+
+    const whereClause = queryBuilder.getWhereClause();
+    const filterParams = queryBuilder.getParams();
+
+    // Main query with pagination
+    const query = `
+      SELECT cl.*
       FROM certificate_logs cl
-      WHERE 1=1
+      ${whereClause}
+      ORDER BY cl.created_at DESC
+      LIMIT $${queryBuilder.getCurrentParamCount()} 
+      OFFSET $${queryBuilder.getCurrentParamCount() + 1}
     `;
 
-    const params = [];
-    let paramCount = 1;
-
-    // Filter by certificate_id
-    if (certificateId && certificateId.trim()) {
-      query += ` AND cl.certificate_id = $${paramCount}`;
-      params.push(certificateId.trim());
-      paramCount++;
-    }
-
-    // Filter by action_type
-    if (actionType && actionType.trim()) {
-      query += ` AND cl.action_type = $${paramCount}`;
-      params.push(actionType.trim().toUpperCase());
-      paramCount++;
-    }
-
-    // Filter by date range
-    if (fromDate && fromDate.trim()) {
-      query += ` AND cl.created_at >= $${paramCount}`;
-      params.push(fromDate.trim());
-      paramCount++;
-    }
-
-    if (toDate && toDate.trim()) {
-      query += ` AND cl.created_at < $${paramCount}::date + interval '1 day'`;
-      params.push(toDate.trim());
-      paramCount++;
-    }
-
-    // Search in certificate_id or description
-    if (search && search.trim()) {
-      query += ` AND (cl.certificate_id ILIKE $${paramCount} OR cl.description ILIKE $${paramCount})`;
-      params.push(`%${search.trim()}%`);
-      paramCount++;
-    }
-
-    // IMPROVED: Regional hub filter using EXISTS subquery (same pattern as CertificateController)
-    if (regionalHub && regionalHub.trim()) {
-      query += ` AND EXISTS (
-    SELECT 1 FROM certificate_stock cs
-    JOIN branches b ON cs.branch_code = b.branch_code
-    WHERE cs.certificate_id = cl.certificate_id
-    AND b.regional_hub = $${paramCount}
-  )`;
-      params.push(regionalHub.trim());
-      paramCount++;
-    }
-
-    // Order by most recent first
-    query += ` ORDER BY cl.created_at DESC`;
-
-    // Add pagination
-    query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    params.push(validatedLimit, validatedOffset);
-
     logger.debug("Query:", query);
-    logger.debug("Params:", params);
+    logger.debug("Params:", [...filterParams, validatedLimit, validatedOffset]);
 
-    const result = await pool.query(query, params);
+    const result = await pool.query(query, [...filterParams, validatedLimit, validatedOffset]);
 
-    // Get total count for pagination
-    let countQuery = `SELECT COUNT(*) FROM certificate_logs cl WHERE 1=1`;
-    const countParams = [];
-    let countParamNum = 1;
+    // Count query - REUSES SAME FILTERS!
+    const countQuery = `
+      SELECT COUNT(*) 
+      FROM certificate_logs cl
+      ${whereClause}
+    `;
 
-    if (certificateId && certificateId.trim()) {
-      countQuery += ` AND cl.certificate_id = $${countParamNum}`;
-      countParams.push(certificateId.trim());
-      countParamNum++;
-    }
-
-    if (actionType && actionType.trim()) {
-      countQuery += ` AND cl.action_type = $${countParamNum}`;
-      countParams.push(actionType.trim().toUpperCase());
-      countParamNum++;
-    }
-
-    if (fromDate && fromDate.trim()) {
-      countQuery += ` AND cl.created_at >= $${countParamNum}`;
-      countParams.push(fromDate.trim());
-      countParamNum++;
-    }
-
-    if (toDate && toDate.trim()) {
-      countQuery += ` AND cl.created_at < $${countParamNum}::date + interval '1 day'`;
-      countParams.push(toDate.trim());
-      countParamNum++;
-    }
-
-    if (search && search.trim()) {
-      countQuery += ` AND (cl.certificate_id ILIKE $${countParamNum} OR cl.description ILIKE $${countParamNum})`;
-      countParams.push(`%${search.trim()}%`);
-      countParamNum++;
-    }
-
-    if (regionalHub && regionalHub.trim()) {
-      countQuery += ` AND EXISTS (
-        SELECT 1 FROM certificate_stock cs
-        JOIN branches b ON cs.branch_code = b.branch_code
-        WHERE cs.certificate_id = cl.certificate_id
-        AND b.regional_hub = $${countParamNum}
-      )`;
-      countParams.push(regionalHub.trim());
-      countParamNum++;
-    }
-
-    const countResult = await pool.query(countQuery, countParams);
+    const countResult = await pool.query(countQuery, filterParams);
     const totalCount = parseInt(countResult.rows[0].count);
 
     logger.info(`Logs retrieved: ${result.rows.length}/${totalCount} records ${regionalHub ? `(filtered by ${regionalHub} regional hub)` : ""}`);
 
+    // IMPORTANT: Wrap pagination and filters in 'meta' object for consistency
     return sendSuccess(res, "Logs retrieved successfully", result.rows, {
-      pagination: {
-        total: totalCount,
-        limit: validatedLimit,
-        offset: validatedOffset,
-        hasMore: totalCount > validatedOffset + result.rows.length,
-        currentPage: Math.floor(validatedOffset / validatedLimit) + 1,
-        totalPages: Math.ceil(totalCount / validatedLimit),
-      },
+      pagination: buildPaginationResponse(totalCount, validatedLimit, validatedOffset, result.rows.length),
       filters: {
         certificate_id: certificateId || null,
         action_type: actionType || null,
@@ -230,19 +237,41 @@ const getLogs = async (req, res) => {
   }
 };
 
-// Get logs for a specific certificate
+// =====================================================
+// GET LOGS BY CERTIFICATE - NOW WITH PAGINATION!
+// =====================================================
 const getLogsByCertificate = async (req, res) => {
   try {
     const { id } = req.params;
+    const { limit = CONSTANTS.PAGINATION.LOGS_DEFAULT_LIMIT, offset = CONSTANTS.PAGINATION.DEFAULT_OFFSET } = req.query;
 
     if (!id || !id.trim()) {
       return sendError(res, CONSTANTS.HTTP_STATUS.BAD_REQUEST, "Certificate ID is required", CONSTANTS.ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const result = await pool.query("SELECT * FROM certificate_logs WHERE certificate_id = $1 ORDER BY created_at DESC", [id.trim()]);
+    // Validate pagination
+    const { validatedLimit, validatedOffset } = validatePagination(limit, offset);
+
+    // Main query with pagination
+    const query = `
+      SELECT * 
+      FROM certificate_logs 
+      WHERE certificate_id = $1 
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await pool.query(query, [id.trim(), validatedLimit, validatedOffset]);
+
+    // Count query
+    const countResult = await pool.query("SELECT COUNT(*) FROM certificate_logs WHERE certificate_id = $1", [id.trim()]);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    logger.info(`Certificate logs retrieved: ${result.rows.length}/${totalCount} for certificate ${id}`);
 
     return sendSuccess(res, "Certificate logs retrieved successfully", result.rows, {
-      count: result.rows.length,
+      pagination: buildPaginationResponse(totalCount, validatedLimit, validatedOffset, result.rows.length),
+      certificate_id: id.trim(),
     });
   } catch (error) {
     logger.error("Get certificate logs error:", error);
@@ -250,7 +279,9 @@ const getLogsByCertificate = async (req, res) => {
   }
 };
 
-// Delete old logs (cleanup function)
+// =====================================================
+// DELETE OLD LOGS (CLEANUP FUNCTION)
+// =====================================================
 const deleteOldLogs = async (req, res) => {
   try {
     const { days = 90 } = req.query;
@@ -269,6 +300,7 @@ const deleteOldLogs = async (req, res) => {
 
     return sendSuccess(res, `Deleted ${result.rows.length} log entries older than ${validatedDays} days`, {
       deletedCount: result.rows.length,
+      daysThreshold: validatedDays,
     });
   } catch (error) {
     logger.error("Delete old logs error:", error);
@@ -289,6 +321,7 @@ const recoverFailedLogs = async (req, res) => {
     } catch {
       return sendSuccess(res, "No failed logs to recover", {
         recovered: 0,
+        failed: 0,
       });
     }
 
@@ -297,6 +330,7 @@ const recoverFailedLogs = async (req, res) => {
 
     let recovered = 0;
     let failed = 0;
+    const failedEntries = [];
 
     for (const line of lines) {
       try {
@@ -326,6 +360,10 @@ const recoverFailedLogs = async (req, res) => {
       } catch (err) {
         logger.error("Failed to recover log:", err);
         failed++;
+        failedEntries.push({
+          line,
+          error: err.message,
+        });
       }
     }
 
@@ -337,11 +375,19 @@ const recoverFailedLogs = async (req, res) => {
       logger.info(`Recovered logs backed up to: ${backupFile}`);
     }
 
+    // If there are still failed entries, write them back
+    if (failedEntries.length > 0) {
+      const stillFailedContent = failedEntries.map((entry) => entry.line).join("\n") + "\n";
+      await fs.writeFile(logFile, stillFailedContent);
+      logger.warn(`${failedEntries.length} entries could not be recovered and remain in failed-logs.jsonl`);
+    }
+
     logger.info(`Recovery complete. Recovered: ${recovered}, Failed: ${failed}`);
 
     return sendSuccess(res, `Recovery complete. Recovered: ${recovered}, Failed: ${failed}`, {
       recovered,
       failed,
+      totalProcessed: lines.length,
     });
   } catch (error) {
     logger.error("Recover failed logs error:", error);
