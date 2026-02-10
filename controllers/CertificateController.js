@@ -1,5 +1,5 @@
 // controllers/CertificateController.js - WITH REGIONAL HUB SUPPORT
-// Version 2.0 - Only head branches can input stock, migration within same regional hub only
+// Version 2.1 - Added branch_code parameter for admin to select head branch
 
 const pool = require("../config/database");
 const { logAction } = require("./CertificateLogsController");
@@ -9,7 +9,7 @@ const validators = require("../utils/validators");
 const { sendError, sendSuccess } = require("../utils/responseHelper");
 
 // =====================================================
-// 1. CREATE NEW CERTIFICATE - HEAD BRANCH ONLY
+// 1. CREATE NEW CERTIFICATE - HEAD BRANCH ONLY (UPDATED)
 // =====================================================
 const createCertificate = async (req, res) => {
   const client = await pool.connect();
@@ -20,66 +20,68 @@ const createCertificate = async (req, res) => {
       `SET LOCAL statement_timeout = '${CONSTANTS.TRANSACTION.TIMEOUT}'`,
     );
 
-    const { certificate_id, jumlah_sertifikat, jumlah_medali } = req.body;
+    const { certificate_id, jumlah_sertifikat, jumlah_medali, branch_code } =
+      req.body;
 
-    // Get user's branch from JWT token
-    const userBranch = req.user.teacher_branch || "SND"; // Fallback to SND for admin
+    // MODIFIED: Allow admin to specify branch_code from frontend
+    // Priority: 1) branch_code from request, 2) user's teacher_branch, 3) fallback SND
+    const userBranch = branch_code || req.user.teacher_branch || "SND";
 
     logger.info("Create certificate request:", {
       certificate_id,
       jumlah_sertifikat,
       jumlah_medali,
+      requestedBranch: branch_code,
       userBranch,
+      teacherBranch: req.user.teacher_branch,
       userRole: req.user.role,
     });
 
-    // ===== CRITICAL: VALIDATE HEAD BRANCH (for teachers only) =====
-    if (req.user.role === "teacher") {
-      const branchCheck = await client.query(
-        `SELECT 
-          branch_code, 
-          branch_name, 
-          is_head_branch, 
-          regional_hub,
-          is_active 
-         FROM branches 
-         WHERE branch_code = $1`,
-        [userBranch],
+    // ===== CRITICAL: VALIDATE HEAD BRANCH =====
+    const branchCheck = await client.query(
+      `SELECT 
+        branch_code, 
+        branch_name, 
+        is_head_branch, 
+        regional_hub,
+        is_active 
+       FROM branches 
+       WHERE branch_code = $1`,
+      [userBranch],
+    );
+
+    if (branchCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.NOT_FOUND,
+        `Branch ${userBranch} not found`,
+        CONSTANTS.ERROR_CODES.NOT_FOUND,
       );
+    }
 
-      if (branchCheck.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return sendError(
-          res,
-          CONSTANTS.HTTP_STATUS.NOT_FOUND,
-          "Your branch information not found",
-          CONSTANTS.ERROR_CODES.NOT_FOUND,
-        );
-      }
+    const branchInfo = branchCheck.rows[0];
 
-      const branchInfo = branchCheck.rows[0];
+    // CRITICAL: Only head branches can input stock
+    if (!branchInfo.is_head_branch) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.FORBIDDEN,
+        `Only head branches can input new stock. Branch ${userBranch} is under ${branchInfo.regional_hub} regional hub. Please select a head branch or contact ${branchInfo.regional_hub} admin to input stock.`,
+        CONSTANTS.ERROR_CODES.FORBIDDEN,
+      );
+    }
 
-      // CRITICAL: Only head branches can input stock
-      if (!branchInfo.is_head_branch) {
-        await client.query("ROLLBACK");
-        return sendError(
-          res,
-          CONSTANTS.HTTP_STATUS.FORBIDDEN,
-          `Only head branches can input new stock. Your branch (${userBranch}) is under ${branchInfo.regional_hub} regional hub. Please contact ${branchInfo.regional_hub} admin to input stock.`,
-          CONSTANTS.ERROR_CODES.FORBIDDEN,
-        );
-      }
-
-      // Check if branch is active
-      if (!branchInfo.is_active) {
-        await client.query("ROLLBACK");
-        return sendError(
-          res,
-          CONSTANTS.HTTP_STATUS.BAD_REQUEST,
-          "Cannot input stock to inactive branch",
-          CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
-        );
-      }
+    // Check if branch is active
+    if (!branchInfo.is_active) {
+      await client.query("ROLLBACK");
+      return sendError(
+        res,
+        CONSTANTS.HTTP_STATUS.BAD_REQUEST,
+        "Cannot input stock to inactive branch",
+        CONSTANTS.ERROR_CODES.VALIDATION_ERROR,
+      );
     }
 
     // ===== VALIDATION =====
@@ -155,7 +157,7 @@ const createCertificate = async (req, res) => {
       [cleanId],
     );
 
-    // 2. Insert into certificate_stock (to user's branch - head branch)
+    // 2. Insert into certificate_stock (to specified head branch)
     const destinationBranch = userBranch;
 
     await client.query(
@@ -166,14 +168,7 @@ const createCertificate = async (req, res) => {
     );
 
     // Get branch info for response
-    const branchInfoResult = await client.query(
-      "SELECT branch_name, regional_hub FROM branches WHERE branch_code = $1",
-      [destinationBranch],
-    );
-    const branchName =
-      branchInfoResult.rows[0]?.branch_name || destinationBranch;
-    const regionalHub =
-      branchInfoResult.rows[0]?.regional_hub || destinationBranch;
+    const regionalHub = branchInfo.regional_hub || destinationBranch;
 
     // 3. Log the action
     await client.query(
@@ -189,6 +184,7 @@ const createCertificate = async (req, res) => {
         medalAmount,
         JSON.stringify({
           branch: destinationBranch,
+          branch_name: branchInfo.branch_name,
           certificates: certAmount,
           medals: medalAmount,
           regional_hub: regionalHub,
@@ -200,21 +196,21 @@ const createCertificate = async (req, res) => {
     await client.query("COMMIT");
 
     logger.info(
-      `Certificate batch created successfully: ${cleanId} at ${destinationBranch}`,
+      `Certificate batch created successfully: ${cleanId} at ${destinationBranch} (${branchInfo.branch_name})`,
     );
 
     return sendSuccess(
       res,
-      `Certificate batch created successfully at ${branchName}`,
+      `Certificate batch created successfully at ${branchInfo.branch_name}`,
       {
         certificate: certResult.rows[0],
         stock: {
           branch_code: destinationBranch,
-          branch_name: branchName,
+          branch_name: branchInfo.branch_name,
           certificates: certAmount,
           medals: medalAmount,
         },
-        message: `Stock has been added to ${branchName}. You can now migrate to other branches in your ${regionalHub} region.`,
+        message: `Stock has been added to ${branchInfo.branch_name}. You can now migrate to other branches in your ${regionalHub} region.`,
       },
     );
   } catch (error) {
